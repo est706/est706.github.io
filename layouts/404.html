@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="{{ site.Language.LanguageCode }}" dir="{{ or site.Language.LanguageDirection `ltr` }}">
+
+<head>
+  {{ partial "head.html" . }}
+</head>
+
+<body class="min-h-screen flex flex-col bg-black font-jersey text-white text-3xl">
+  <header>
+    {{ partial "header.html" . }}
+  </header>
+
+  <main class="flex-1 w-full">
+    <div class="max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-10 lg:py-16">
+
+      <section class="relative border border-gray-200 bg-[#070709] rounded-sm p-8 md:p-12 text-gray-300">
+
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-semibold text-blue-200 mb-6 tracking-wide">
+          cat "404.txt"
+        </h1>
+
+        <div class="space-y-6 sm:text-lg md:text-xl lg:text-2xl leading-relaxed">
+          <span id="typewriter"></span><span id="cursor" class="text-blue-200">█</span>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    {{ partial "footer.html" . }}
+  </footer>
+
+</body>
+
+<script>
+  function startTypewriter() {
+    const el = document.getElementById("typewriter");
+    const cursor = document.getElementById("cursor");
+
+    if (!el) return;
+
+    el.textContent = "";
+    cursor.style.animation = "";
+
+    const lines = [
+      { text: "bash: cd: the page you're looking for does not exist.", pause: 600 },
+      { text: "No such file or directory.", pause: 800 },
+      { text: "Try navigating back to /writeups or /projects.", pause: 0 },
+    ];
+
+    let lineIndex = 0;
+    let charIndex = 0;
+
+    function type() {
+      if (lineIndex < lines.length) {
+        const current = lines[lineIndex];
+        if (charIndex < current.text.length) {
+          el.innerHTML += current.text.charAt(charIndex);
+          charIndex++;
+          setTimeout(type, 25);
+        } else {
+          if (lineIndex < lines.length - 1) {
+            el.innerHTML += "<br><br>";
+          }
+          lineIndex++;
+          charIndex = 0;
+          setTimeout(type, current.pause);
+        }
+      } else {
+        cursor.style.animation = "blink 1s step-end infinite";
+      }
+    }
+
+    type();
+  }
+
+  window.addEventListener("pageshow", startTypewriter);
+  window.addEventListener("popstate", startTypewriter);
+</script>
+
+<style>
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+</style>
