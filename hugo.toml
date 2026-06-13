@@ -1,0 +1,4 @@
+baseURL = 'https://est706.github.io/'
+locale = 'en-us'
+title = 'Esteban Pangelinan'
+theme = 'enervoid'
