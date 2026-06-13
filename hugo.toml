@@ -1,4 +1,45 @@
-baseURL = 'https://est706.github.io/'
-locale = 'en-us'
-title = 'Esteban Pangelinan'
-theme = 'enervoid'
+baseURL = 'https://est706.github.io'
+languageCode = 'en-us'
+title = "Esteban Pangelinan - Cybersecurity"
+theme = "enervoid"
+
+[menus]
+  [[menus.main]]
+    name = '/writeups'
+    pageRef = '/writeups'
+    weight = 10
+
+  [[menus.main]]
+    name = '/projects'
+    pageRef = '/projects'
+    weight = 20
+
+[params]
+  avatar = "/cybersec_logo.png"
+  favicon = "/cybersec_logo.ico"
+
+  [[params.socials]]
+      link = "https://github.com/est706"
+      icon = "devicon-github-original"
+   [[params.socials]]
+      link = "https://www.linkedin.com/in/esteban-pangelinan-385249210/"
+      icon = "devicon-linkedin-plain"
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.extensions.passthrough]
+      enable = true
+      [markup.goldmark.extensions.passthrough.delimiters]
+        block = [['$$','$$'], ['\\[','\\]']]
+        inline = [['$','$'], ['\\(','\\)']]
+
+    [markup.goldmark.parser]
+      [markup.goldmark.parser.attribute]
+        block = true
+
+[markup.highlight]
+  noClasses = true
+  codeFences = true
+  guessSyntax = true
+  tabWidth = 4
+  style = "monokai"
