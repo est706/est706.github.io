@@ -1,12 +1,12 @@
-# Esteban Exploits
+# Esteban Pangelinan - Cybersecurity
 
 Personal cybersecurity portfolio built with Hugo + enervoid theme.
 
 🔗 Live site: https://est706.github.io
 
 ## Sections
-- **Writeups:** HTB box walkthroughs and CTF solutions
-- **Projects:** home lab builds, tools, and security projects
+- **Writeups:** Machine walkthroughs and CTF solutions
+- **Projects:** Home lab builds and cybersecurity projects
 
 ## Stack
 - Hugo (static site generator)
