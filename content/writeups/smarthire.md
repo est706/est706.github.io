@@ -29,7 +29,7 @@ PORT   STATE SERVICE VERSION
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-# Nmap done at Mon Jun  1 11:36:12 2026 -- 1 IP address (1 host up) scanned in 33.82 seconds
+Nmap done at Mon Jun  1 11:36:12 2026 -- 1 IP address (1 host up) scanned in 33.82 seconds
 ```
 The scan revealed the domain name, **smarthire.htb**, which I added to my **/etc/hosts** file. I visited the site in my web browser and was met with this webpage:  
 ![smarthire landing page](/images/smarthire/landing.png)

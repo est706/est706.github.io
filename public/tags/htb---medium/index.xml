@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>HTB - Medium on Esteban Pangelinan - Cybersecurity</title>
+    <link>http://localhost:1313/tags/htb---medium/</link>
+    <description>Recent content in HTB - Medium on Esteban Pangelinan - Cybersecurity</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 15 Jun 2026 01:38:45 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/htb---medium/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Abducted - Remote printer misconfiguration leads to root access</title>
+      <link>http://localhost:1313/writeups/abducted/</link>
+      <pubDate>Mon, 15 Jun 2026 01:38:45 +0000</pubDate>
+      <guid>http://localhost:1313/writeups/abducted/</guid>
+      <description>&lt;h2 id=&#34;overview&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;OVERVIEW&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;</description>
+    </item>
+    <item>
+      <title>SmartHire - Executing malicious code through an AI model</title>
+      <link>http://localhost:1313/writeups/smarthire/</link>
+      <pubDate>Thu, 04 Jun 2026 14:19:11 +0000</pubDate>
+      <guid>http://localhost:1313/writeups/smarthire/</guid>
+      <description>&lt;h2 id=&#34;overview&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;OVERVIEW&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;&#xD;&#xA;&lt;p&gt;&lt;em&gt;SmartHire&lt;/em&gt; is a medium-rated Linux machine on the HackTheBox platform. Breaking into the machine requires web enumeration to find a vulnerable subdomain, malicious pickle file upload to modify an AI model into a reverse shell, and privilege escalation through Python path manipulation.&lt;/p&gt;&#xA;&lt;h2 id=&#34;recon&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;RECON&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;&#xD;&#xA;&lt;p&gt;After obtaining the target machine&amp;rsquo;s IP address, I ran an nmap scan to identify open TCP ports:&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

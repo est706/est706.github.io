@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SIEM on Esteban Pangelinan - Cybersecurity</title>
+    <link>http://localhost:1313/tags/siem/</link>
+    <description>Recent content in SIEM on Esteban Pangelinan - Cybersecurity</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 10 Jun 2026 10:58:30 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/siem/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Building a Home SOC Lab</title>
+      <link>http://localhost:1313/projects/soc_lab/</link>
+      <pubDate>Wed, 10 Jun 2026 10:58:30 +0000</pubDate>
+      <guid>http://localhost:1313/projects/soc_lab/</guid>
+      <description>Using Elastic SIEM on Ubuntu to monitor a Windows machine.</description>
+    </item>
+  </channel>
+</rss>

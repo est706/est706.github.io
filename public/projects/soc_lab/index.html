@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<link rel="icon" type="image/x-icon" href="/cybersec_logo.ico">
+<title>Building a Home SOC Lab</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" type='text/css' href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+  integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Sans+Mono:ital,wght@0,400..700;1,400..700&display=swap');
+
+  .font-jersey {
+
+    font-family: "Ubuntu Sans Mono", monospace;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
+
+
+  .md-content .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .md-content .katex-display>.katex {
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: 300ms ease-in-out;
+  }
+
+  .is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+  }
+
+  html.is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  html.is-animating {
+    cursor: progress;
+  }
+
+  html.is-leaving .swup-transition-fade {
+    opacity: 0;
+  }
+</style>
+
+<script src="https://unpkg.com/swup@4"></script>
+<script src="https://unpkg.com/@swup/preload-plugin@3"></script>
+<script src="https://unpkg.com/@swup/progress-plugin@3"></script>
+<script>
+  const swup = new Swup({
+    containers: ['#swup'],
+    animationSelector: '[class*="swup-transition-"]',
+    cache: true,
+    preload: true,
+    animateHistoryBrowsing: true,
+
+    plugins: [
+      new SwupPreloadPlugin(),
+      new SwupProgressPlugin()
+    ]
+  })
+  window.swup = swup
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  crossorigin="anonymous"></script>
+
+<script>
+  
+
+  
+  const KATEX_CONFIG = {
+    delimiters: [
+      {left: "$$", right: "$$", display: true},
+      {left: "$", right: "$", display: false},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "\\(", right: "\\)", display: false}
+    ],
+    ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+    throwOnError: false
+  };
+
+  
+  function renderKatex() {
+    
+    if (typeof renderMathInElement !== "function") {
+      console.log("⏳ Waiting for KaTeX to load...");
+      return;
+    }
+
+    
+    const contentArea = document.getElementById('swup') || document.body;
+
+    try {
+      renderMathInElement(contentArea, KATEX_CONFIG);
+      console.log("✅ KaTeX rendered successfully");
+    } catch (error) {
+      console.error("❌ KaTeX rendering error:", error);
+    }
+  }
+
+  
+  function renderKatexWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof renderMathInElement === "function") {
+        renderKatex();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ KaTeX auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering KaTeX...");
+        
+        setTimeout(() => renderKatexWithRetry(3, 50), 50);
+      });
+      console.log("✅ KaTeX-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderKatexWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+  
+  window.renderKatex = renderKatex;
+</script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  let initialized = false;
+
+  function renderMermaid() {
+    const contentArea = document.getElementById('swup') || document.body;
+    const mermaidBlocks = contentArea.querySelectorAll('.language-mermaid, .mermaid');
+
+    if (mermaidBlocks.length === 0) {
+      console.log("ℹ️ No mermaid blocks found on this page");
+      return;
+    }
+
+    if (!initialized) {
+      mermaid.initialize({startOnLoad: false, theme: 'dark'});
+      initialized = true;
+    }
+
+    mermaidBlocks.forEach(el => {
+      if (el.dataset.processed === 'true') {
+        const source = el.dataset.mermaidSource;
+        if (source) {
+          el.innerHTML = source;
+          el.removeAttribute('data-processed');
+        }
+      } else {
+        el.dataset.mermaidSource = el.textContent;
+      }
+    });
+
+    mermaid.run({nodes: mermaidBlocks})
+      .then(() => console.log("✅ Mermaid rendered successfully"))
+      .catch(err => console.error("❌ Mermaid rendering error:", err));
+  }
+
+  function renderMermaidWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof mermaid.initialize === "function") {
+        renderMermaid();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ Mermaid auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering mermaid...");
+        
+        setTimeout(() => renderMermaidWithRetry(3, 50), 50);
+      });
+      console.log("✅ Mermaid-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderMermaidWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+
+
+</script>
+
+
+</head>
+
+<body class="min-h-screen flex flex-col bg-black font-jersey text-white text-3xl">
+  <header>
+    <div class="sticky absolute top-0 z-50">
+  <nav class="w-full border-b border-gray-800 bg-[#070709]/95 backdrop-blur-sm text-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center gap-3">
+
+          <a href='http://localhost:1313/' class="flex items-center gap-3 group" aria-label="Homepage">
+
+            <img src='/cybersec_logo.png' alt="Esteban Pangelinan - Cybersecurity"
+              class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
+              style="animation: border-breathe 4s ease-in-out infinite;" />
+            <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
+              root@epangelinan: cd
+              <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
+            </span>
+          </a>
+        </div>
+
+        
+        <div class="flex items-center gap-4">
+          
+          <div class="hidden md:flex items-center">
+            
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a aria-current="true" href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+          </div>
+
+          
+          <div class="md:hidden">
+            <button id="nav-toggle" aria-controls="mobile-menu" aria-expanded="false"
+              class="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Open menu">
+              <svg class="h-6 w-6 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="mobile-menu" class="md:hidden hidden pb-4">
+        
+        
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a aria-current="true" href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+      </div>
+    </div>
+  </nav>
+
+  
+  <style>
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      10% {
+        opacity: 0.2;
+        transform: translateY(-1px);
+      }
+
+      20% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes border-breathe {
+      0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+
+      50% {
+        box-shadow: 0 0 18px 6px rgba(99, 102, 241, 0.03);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+    }
+  </style>
+
+  
+  <script>
+    (function () {
+      const btn = document.getElementById('nav-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', () => {
+        const open = menu.classList.toggle('hidden') === false;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    })();
+  </script>
+</div>
+
+  </header>
+
+  <main class="flex-1 w-full">
+    <div id="swup" class="swup-transition-fade">
+      <div class="max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-10 lg:py-16">
+        
+<main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12 text-gray-100">
+  <div class="grid grid-cols-12 gap-6">
+
+    <aside class="hidden lg:block col-span-2">
+      <div class="sticky top-24">
+        <div class="mb-3 text-xs uppercase tracking-widest text-gray-500">Table of Contents</div><nav class="toc text-sm text-gray-300 border border-gray-800/70 bg-[#070709] rounded-sm p-4">
+          <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#architecture"><strong>ARCHITECTURE</strong></a></li>
+    <li><a href="#stack"><strong>STACK</strong></a></li>
+    <li><a href="#setup"><strong>SETUP</strong></a></li>
+    <li><a href="#action"><strong>ACTION</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+        </nav></div>
+    </aside>
+
+    <article class="col-span-12 lg:col-span-10">
+      <header class="mb-6">
+  <h1 class="text-2xl sm:text-3xl md:text-4xl tracking-wide text-white">
+    Building a Home SOC Lab
+  </h1>
+
+  <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm sm:text-base text-gray-400">
+    <span class="font-mono">Jun 10, 2026 • 10:58</span>
+    <span class="text-gray-700">/</span>
+    <span class="font-mono">7 min read</span>
+  </div><div class="mt-3 flex flex-wrap gap-2"><a href="/%20tags/soc"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #SOC
+    </a><a href="/%20tags/windows"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Windows
+    </a><a href="/%20tags/linux"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Linux
+    </a><a href="/%20tags/siem"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #SIEM
+    </a></div></header>
+
+
+      <div class="lg:hidden mb-6">
+        <details class="border border-gray-800/70 bg-[#070709] rounded-sm">
+          <summary class="cursor-pointer select-none px-4 py-3 text-gray-200 hover:text-white transition-colors">
+            Table of Contents
+          </summary>
+          <div class="px-4 pb-4 toc text-sm text-gray-300">
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#architecture"><strong>ARCHITECTURE</strong></a></li>
+    <li><a href="#stack"><strong>STACK</strong></a></li>
+    <li><a href="#setup"><strong>SETUP</strong></a></li>
+    <li><a href="#action"><strong>ACTION</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+          </div>
+        </details>
+      </div>
+
+      <div class="md-surface border border-gray-800/70 bg-[#070709] rounded-sm p-6 sm:p-10">
+        <div class="md-content text-base leading-relaxed text-gray-200">
+          <h2 id="overview" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>OVERVIEW</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>This <strong>SOC lab</strong> was built using <strong>VirtualBox</strong>, running an Ubuntu machine with Elastic SIEM, a Windows 10 Pro machine acting as a target, and a Kali Linux machine for attacking. It was put together to practice <strong>monitoring logs</strong>, <strong>simulating attacks</strong>, and <strong>detecting anomolies</strong> within a simulated enterprise environment.</p>
+<h2 id="architecture" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>ARCHITECTURE</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>To get started setting up the lab, I needed to assess its architecture. The lab needed <strong>three machines</strong> to function how I wanted it to. To get things moving, I went ahead and created the following machines in Virtualbox:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/architecture.png" loading="lazy" decoding="async"
+  alt="architecture">
+<strong>Kali:</strong> Runs Kali Linux, used as an attacking machine (this one had already been created for pentesting assessments in the past)<br>
+ <br>
+<strong>Elastic Stack:</strong> Runs on Ubuntu 22.04 LTS, with a Docker container configured with Elasticsearch, Logstash, and Kibana. Elasticsearch stores and indexes the logs, Logstash handles log ingestion and parsing, and Kibana serves as the GUI for searching and visualizing the data. Altogether, a lightweight and effective SIEM.<br>
+ <br>
+<strong>Windows 10:</strong> Runs Windows 10 Pro, with Sysmon and Winlogbeat. The Sysmon service monitors system events and writes them to the Windows event log. Winlogbeat ships these logs to the Ubuntu machine, where Logstash parses them and hands them off to Elasticsearch.<br>
+ <br>
+Note: During the setup of each machine, I made sure they were configured with <strong>Host-Only</strong> and <strong>NAT</strong> network adapters in VirtualBox. This would allow each of them to talk to each other <em>and</em> access the internet at the same time.</p>
+<h2 id="stack" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>STACK</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>I chose this tech stack because it was pretty straightforward and cost me nothing to implement.<br>
+ <br>
+<strong>VirtualBox:</strong> Since I already had my Kali Linux machine configured through VirtualBox, I saw no reason to switch to something like VMWare. VirtualBox is free and has great snapshot support so I figured it was a good option for an isolated lab environment.<br>
+ <br>
+<strong>Elastic Stack (ELK):</strong> I chose to run Elastic instead of another SIEM like Splunk or Wazuh because of its free self-hosted tier and unlimited data ingestion. It&rsquo;s also widely used in enterprise environments.<br>
+ <br>
+<strong>Sysmon &amp; Winlogbeat:</strong> Default Windows log events are very surface level, so I wanted to implement Sysmon to generate more detailed logs (which show things like process creation, network connections, registry changes, file creation). I set up Sysmon using the <em>SwiftOnSecurity Sysmon Config</em>, a widely used configuration that sets up Sysmon to create high-quality event tracing. Winlogbeat is a log shipping tool that was created specifically for Windows logs and it also has native integration for Elastic Stack, so I saw it as the best option for sending logs from the Windows machine to the SIEM.</p>
+<h2 id="setup" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>SETUP</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>To get everything setup, I started with my Ubuntu machine. This VM would be used for running the ELK (Elastic, Logstash, Kibana) SIEM and also for monitoring logs through Kibana (which is why I went with Ubuntu Desktop instead of Ubuntu Server). I deployed ELK using <strong>Docker Compose</strong> via the <strong>deviantony/docker-elk</strong> repository. A full guide on installation is included in the repo, which you can find <a href="https://github.com/deviantony/docker-elk"><strong>here</strong></a>.<br>
+ <br>
+Once the ELK SIEM was fully assembled and elasticsearch, kibana, and logstash were all configured, I made sure all services were running:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/docker.png" loading="lazy" decoding="async"
+  alt="checking services for ELK SIEM">
+Now it was time to move on to the next step, setting up the <strong>Windows 10</strong> machine!<br>
+ <br>
+Once the Windows VM installation had completed, I went ahead and installed <strong>Sysmon</strong> with the <strong>SwiftOnSecurity configuration</strong>. This configuration allows Sysmon to create detailed logs right out of the box. Then I installed <strong>Winlogbeat</strong>, which would be used as the shipping agent for moving the Sysmon logs <em>over</em> to the <strong>ELK SIEM</strong>.<br>
+ <br>
+I downloaded Sysmon from <a href="https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon"><strong>this Microsoft link</strong></a>, then moved the <strong>Sysmon64</strong> application to my VM&rsquo;s <strong>System32</strong> folder. Winlogbeat can be downloaded from <a href="https://www.elastic.co/downloads/beats/winlogbeat"><strong>here</strong></a>, and all you have to do upon downloading is edit the <strong>.yml</strong> file that comes with it to send logs to your SIEM. The installation for both was pretty straightforward, and the setup was very quick.<br>
+ <br>
+Once I got both of those tools configured on my Windows VM, I ran a quick check to make sure both services were running:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/powershell.png" loading="lazy" decoding="async"
+  alt="checking services for windows vm">
+I went back to my Ubuntu machine running the ELK SIEM, and navigated to <strong>http://localhost:5601</strong> in my browser to get to Kibana, the GUI running Elastic. The dashboard was empty at first, so I had to configure a <strong>data view</strong> to grab the logs from winlogbeat and throw them on the dashboard. Once that was setup, I was finally able to monitor the Windows VM!
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/kibana.png" loading="lazy" decoding="async"
+  alt="kibana dashboard">
+ <br>
+Alright smooth, everything is in place. Now, let&rsquo;s see it in-</p>
+<h2 id="action" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>ACTION</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>With the lab fully setup, I was eager to test it out. I booted up my attacker machine running Kali, and tried to ping the Windows VM. Nothing went through at first, and then I realized I needed to <strong>disable the Windows Defender firewall</strong>:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/firewall.png" loading="lazy" decoding="async"
+  alt="turning off the windows defender firewall">
+After disabling that, I was able to successfully ping the target machine from my attacker. No packets dropped here:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/ping.png" loading="lazy" decoding="async"
+  alt="pinging from attacker">
+Out of curiosity, I wanted to check Kibana to see if <em>turning off the firewall</em> would be logged. Sure enough, I was able to find it! This event showed up:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/event.png" loading="lazy" decoding="async"
+  alt="kibana firewall disable">
+Sysmon logged the disabling of the firewall as a registry change event, even auto-tagged it with <strong>RuleName:T1089</strong>. Elastic documentation maps rules with MITRE ATT&amp;CK technique identifiers, with this <em>specific</em> rule representing <strong>T1089 - Disabling Security Tools</strong> (which actually got sub-grouped into T1685, however Kibana still shows the old technique identifier). This really goes to show the depth that Sysmon is able to detect, and also served as a pretty cool first look into Kibana&rsquo;s monitoring!<br>
+ <br>
+Now, I wanted to see if my attacker machine was able to generate traffic to the target&hellip; But in order to log <strong>nmap scans</strong> hitting my Windows VM, I had to look <em>beyond</em> Sysmon. Out the box, the SwiftOnSecurity config logs outbound connections initiated by specific processes- useful for catching malware &ldquo;calling home,&rdquo; but doesn&rsquo;t capture <em>inbound</em> connections like a port scan since there&rsquo;s no local process initiating them.<br>
+ <br>
+To capture this kind of traffic, I enabled Windows&rsquo; built-in Security audit policy for connection logging, specifically <strong>Event ID 5156</strong> (Windows Filtering Platform: Connection Allowed), which logs every connection at the OS level <em>regardless</em> of the process involved:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">powershell</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span>PS C:\Windows\system32&gt; auditpol /set /subcategory<span style="color:#960050;background-color:#1e0010">:</span><span style="color:#e6db74">&#34;Filtering Platform Connection&#34;</span> /success<span style="color:#960050;background-color:#1e0010">:</span>enable /failure<span style="color:#960050;background-color:#1e0010">:</span>enable
+</span></span><span style="display:flex;"><span>The command was successfully executed.</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Once that was in place, I ran an <strong>nmap</strong> scan on my Kali machine using T5 to make it quick:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/nmap.png" loading="lazy" decoding="async"
+  alt="nmap scan">
+Then, I checked Kibana to see if the scan got logged:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/soc_lab/sourceaddress.png" loading="lazy" decoding="async"
+  alt="kibana source address">
+Sure enough, the <strong>Filtering Platform Connection</strong> event.action was logged for the nmap scan coming from my attacking machine&rsquo;s IP within the same time as running the scan, confirming the connection attempts hitting the Windows VM were being captured at the OS level.<br>
+ <br>
+<strong>One thing worth noting:</strong> Event ID 5156 logs <em>every</em> connection, not just suspicious ones, which means it generates a massive volume of entries very quickly compared to Sysmon&rsquo;s curated event set. After confirming the scan was logged, I disabled the audit policy to keep the lab from getting flooded with unnecessary noise:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">powershell</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span>PS C:\Windows\system32&gt; auditpol /set /subcategory<span style="color:#960050;background-color:#1e0010">:</span><span style="color:#e6db74">&#34;Filtering Platform Connection&#34;</span> /success<span style="color:#960050;background-color:#1e0010">:</span>disable /failure<span style="color:#960050;background-color:#1e0010">:</span>disable
+</span></span><span style="display:flex;"><span>The command was successfully executed.</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Seeing my dashboard get stacked with the same events was a good reminder that more logging isn&rsquo;t always better- knowing <em>when</em> to enable verbose logging, and turning it off once you&rsquo;ve got what you need, is part of keeping a SIEM manageable. Something I&rsquo;ll definitely keep in mind as I do more projects with this SOC lab.</p>
+<h2 id="takeaways" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>TAKEAWAYS</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>Time to debrief. This was the first home lab I&rsquo;ve ever created and it was both a great learning experience <em>and</em> a lot of fun to put together. I got to see how the ELK SIEM works in real-time and even tracked my own <strong>Windows Defender Firewall changes</strong> and <strong>nmap scan</strong> in Kibana! Though my lab is much smaller in scale compared to an enterprise environment, it serves its purpose as a good simulation of how SIEMs work in the real world.<br>
+ <br>
+So what&rsquo;s next?<br>
+ <br>
+I think simulating an attack or setting up a vulnerable service to exploit could be a good next step- I still got a lot to learn about how ELK picks up on threat actors. In any case, the foundation is laid, and now all I&rsquo;ve got is <strong>opportunity</strong>.</p>
+
+        </div>
+      </div>
+    </article>
+
+  </div>
+</main>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="border-t border-gray-800 bg-[#070709] text-gray-400">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between py-6 space-y-4 md:space-y-0">
+
+      
+      <div class="text-sm sm:text-base md:text-lg">
+        <span class="relative inline-block">
+          © 2026 Esteban Pangelinan. All rights reserved. <br>
+          Made with <a href="https://gohugo.io" target="_blank">Hugo</a> | <a
+            href="https://github.com/Enerhim/enervoid-theme" target="_blank">Enervoid</a>
+        </span>
+      </div>
+
+      
+      <div class="flex items-center space-x-6 text-sm sm:text-base md:text-lg">
+
+        
+        <a href='https://github.com/est706' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-github-original"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+        <a href='https://www.linkedin.com/in/esteban-pangelinan-385249210/' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-linkedin-plain"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+
+      </div>
+    </div>
+  </div>
+</div>
+
+  </footer>
+</body>
+
+</html>
