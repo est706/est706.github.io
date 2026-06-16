@@ -6,8 +6,15 @@
     <description>Recent content on Esteban Pangelinan - Cybersecurity</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 15 Jun 2026 01:38:45 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 16 Jun 2026 08:48:36 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Detecting System Compromise via SMB with ELK</title>
+      <link>http://localhost:1313/projects/smb_lab/</link>
+      <pubDate>Tue, 16 Jun 2026 08:48:36 +0000</pubDate>
+      <guid>http://localhost:1313/projects/smb_lab/</guid>
+      <description>Using Metasploit and Mimikatz to simulate brute-force attacks and credential dumping over SMB, then detecting it in Kibana.</description>
+    </item>
     <item>
       <title>Abducted - Small printer misconfiguration gets machine pwned</title>
       <link>http://localhost:1313/writeups/abducted/</link>
@@ -16,11 +23,11 @@
       <description>&lt;h2 id=&#34;overview&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;OVERVIEW&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;&#xD;&#xA;&lt;p&gt;&lt;em&gt;Abducted&lt;/em&gt; is a medium-rated Linux machine on the HackTheBox platform. Taking over the machine requires port enumeration to find a vulnerable Samba print service, command injection to get a foothold through a known CVE, lateral movement via SMB misconfigurations, and privilege escalation through a malicious systemd drop-in.&lt;/p&gt;&#xA;&lt;h2 id=&#34;recon&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;RECON&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;&#xD;&#xA;&lt;p&gt;After obtaining the target machine&amp;rsquo;s IP address, I ran an nmap scan to identify open TCP ports:&lt;/p&gt;</description>
     </item>
     <item>
-      <title>Building a Home SOC Lab</title>
+      <title>From Zero to SIEM: Building a Home SOC Lab</title>
       <link>http://localhost:1313/projects/soc_lab/</link>
       <pubDate>Wed, 10 Jun 2026 10:58:30 +0000</pubDate>
       <guid>http://localhost:1313/projects/soc_lab/</guid>
-      <description>Using Elastic SIEM on Ubuntu to monitor a Windows machine.</description>
+      <description>Setting up an Elastic SIEM on Ubuntu and configuring a Windows 10 target with Sysmon and Winlogbeat to ship logs into Kibana for real-time monitoring.</description>
     </item>
     <item>
       <title>SmartHire - Executing malicious code through an AI model</title>

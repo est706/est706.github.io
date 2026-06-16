@@ -9,11 +9,11 @@
     <lastBuildDate>Mon, 15 Jun 2026 01:38:45 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/tags/htb---medium/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Abducted - Remote printer misconfiguration leads to root access</title>
+      <title>Abducted - Small printer misconfiguration gets machine pwned</title>
       <link>http://localhost:1313/writeups/abducted/</link>
       <pubDate>Mon, 15 Jun 2026 01:38:45 +0000</pubDate>
       <guid>http://localhost:1313/writeups/abducted/</guid>
-      <description>&lt;h2 id=&#34;overview&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;OVERVIEW&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;</description>
+      <description>&lt;h2 id=&#34;overview&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;OVERVIEW&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;&#xD;&#xA;&lt;p&gt;&lt;em&gt;Abducted&lt;/em&gt; is a medium-rated Linux machine on the HackTheBox platform. Taking over the machine requires port enumeration to find a vulnerable Samba print service, command injection to get a foothold through a known CVE, lateral movement via SMB misconfigurations, and privilege escalation through a malicious systemd drop-in.&lt;/p&gt;&#xA;&lt;h2 id=&#34;recon&#34; class=&#34;mt-8 mb-3 text-xl sm:text-2xl text-white&#34;&gt;&#xD;&#xA;    &lt;span class=&#34;relative inline-block&#34;&gt;&#xD;&#xA;      &lt;strong&gt;RECON&lt;/strong&gt;&#xD;&#xA;      &lt;span&#xD;&#xA;        class=&#34;absolute left-0 -bottom-1 h-px w-0 bg-indigo-400&#34;&gt;&lt;/span&gt;&#xD;&#xA;    &lt;/span&gt;&#xD;&#xA;&lt;/h2&gt;&#xD;&#xA;&lt;p&gt;After obtaining the target machine&amp;rsquo;s IP address, I ran an nmap scan to identify open TCP ports:&lt;/p&gt;</description>
     </item>
     <item>
       <title>SmartHire - Executing malicious code through an AI model</title>

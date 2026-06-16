@@ -6,14 +6,21 @@
     <description>Recent content in Windows on Esteban Pangelinan - Cybersecurity</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 10 Jun 2026 10:58:30 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 16 Jun 2026 08:48:36 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/tags/windows/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Building a Home SOC Lab</title>
+      <title>Detecting System Compromise via SMB with ELK</title>
+      <link>http://localhost:1313/projects/smb_lab/</link>
+      <pubDate>Tue, 16 Jun 2026 08:48:36 +0000</pubDate>
+      <guid>http://localhost:1313/projects/smb_lab/</guid>
+      <description>Using Metasploit and Mimikatz to simulate credential dumping and file extraction over SMB and detect it in real-time.</description>
+    </item>
+    <item>
+      <title>Building a Home SOC Lab Using VirtualBox</title>
       <link>http://localhost:1313/projects/soc_lab/</link>
       <pubDate>Wed, 10 Jun 2026 10:58:30 +0000</pubDate>
       <guid>http://localhost:1313/projects/soc_lab/</guid>
-      <description>Using Elastic SIEM on Ubuntu to monitor a Windows machine.</description>
+      <description>Putting together an Elastic SIEM on Ubuntu to monitor logs from a Windows machine.</description>
     </item>
   </channel>
 </rss>

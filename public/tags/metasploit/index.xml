@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Metasploit on Esteban Pangelinan - Cybersecurity</title>
+    <link>http://localhost:1313/tags/metasploit/</link>
+    <description>Recent content in Metasploit on Esteban Pangelinan - Cybersecurity</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 16 Jun 2026 08:48:36 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/metasploit/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Detecting System Compromise via SMB with ELK</title>
+      <link>http://localhost:1313/projects/smb_lab/</link>
+      <pubDate>Tue, 16 Jun 2026 08:48:36 +0000</pubDate>
+      <guid>http://localhost:1313/projects/smb_lab/</guid>
+      <description>Using Metasploit and Mimikatz to simulate credential dumping and file extraction over SMB and detect it in real-time.</description>
+    </item>
+  </channel>
+</rss>

@@ -1,8 +1,8 @@
 +++
-title = "Building a Home SOC Lab"
+title = "From Zero to SIEM: Building a Home SOC Lab"
 date = 2026-06-10T10:58:30Z
 tags = ["SOC", "Windows", "Linux", "SIEM"]
-summary = "Using Elastic SIEM on Ubuntu to monitor a Windows machine."
+summary = "Setting up an Elastic SIEM on Ubuntu and configuring a Windows 10 target with Sysmon and Winlogbeat to ship logs into Kibana for real-time monitoring."
 +++
 ## **OVERVIEW**
 This **SOC lab** was built using **VirtualBox**, running an Ubuntu machine with Elastic SIEM, a Windows 10 Pro machine acting as a target, and a Kali Linux machine for attacking. It was put together to practice **monitoring logs**, **simulating attacks**, and **detecting anomolies** within a simulated enterprise environment.
